@@ -48,9 +48,13 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
+// camera
     implementation ("androidx.camera:camera-core:1.4.0")
     implementation ("androidx.camera:camera-camera2:1.4.0")
     implementation ("androidx.camera:camera-lifecycle:1.4.0")
     implementation ("androidx.camera:camera-view:1.4.0")
+// bottom navigation
+    implementation ("androidx.navigation:navigation-fragment-ktx:2.3.5")
+    implementation ("androidx.navigation:navigation-ui-ktx:2.3.5")
+    implementation ("com.google.android.material:material:1.3.0")
 }

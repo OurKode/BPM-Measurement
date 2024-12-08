@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/timer_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:layout_gravity="center"
+        android:layout_marginTop="21dp"
+        android:layout_marginBottom="18dp"
+        android:text="Timer" />
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/preview_view"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_marginBottom="21dp"
+        android:layout_gravity="center"/>
+
+    <TextView
+        android:id="@+id/bpm_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="24sp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="21dp"
+        android:textStyle="bold"
+        android:text="BPM" />
+
+    <Button
+        android:id="@+id/start_stop_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:padding="12dp"
+        android:textSize="18sp"
+        android:layout_marginLeft="21dp"
+        android:layout_marginRight="21dp"
+        android:text="Mulai" />
+</LinearLayout>

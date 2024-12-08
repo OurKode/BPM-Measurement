@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/navigation_measure">
+
+    <fragment
+        android:id="@+id/navigation_measure"
+        android:name="com.dicoding.heartalert2.MeasureFragment"
+        android:label="Measure"
+        tools:layout="@layout/fragment_measure" />
+    <fragment
+        android:id="@+id/navigation_insight"
+        android:name="com.dicoding.heartalert2.InsightFragment"
+        android:label="Insight"
+        tools:layout="@layout/fragment_insight" />
+</navigation>
