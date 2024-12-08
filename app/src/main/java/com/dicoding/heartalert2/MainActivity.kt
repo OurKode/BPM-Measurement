@@ -69,7 +69,7 @@ class MainActivity : AppCompatActivity() {
         isMonitoring = true
         sampleBuffer.clear()
         bpmTextView.text = "Mengukur..."
-        startStopButton.text = "Stop"
+        startStopButton.text = "Berhenti"
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
@@ -88,13 +88,6 @@ class MainActivity : AppCompatActivity() {
                             sampleBuffer.add(timestamp to brightness)
                             if (sampleBuffer.size > maxSamples) {
                                 sampleBuffer.removeAt(0)
-                            }
-
-                            val dataStats = analyzeData(sampleBuffer)
-                            val bpm = calculateBpm(dataStats.crossings)
-
-                            bpm?.let {
-                                bpmTextView.text = "Detak Jantung: ${it.roundToInt()} BPM"
                             }
                         }
                     }
@@ -128,17 +121,48 @@ class MainActivity : AppCompatActivity() {
                 }, 1500) // Wait for 1.5 seconds
             }
         }, ContextCompat.getMainExecutor(this))
-    }
 
-    private fun startSampling() {
-        Toast.makeText(this, "Starting measurement...", Toast.LENGTH_SHORT).show()
+        // Update BPM every 1.5 seconds
+        startStopButton.postDelayed(updateBpmRunnable, 1500)
     }
 
     private fun stopMonitoring() {
         isMonitoring = false
         camera?.cameraControl?.enableTorch(false)
+        camera?.let {
+            val cameraProvider = ProcessCameraProvider.getInstance(this).get()
+            cameraProvider.unbindAll()
+            camera = null
+        }
         startStopButton.text = "Mulai"
         Toast.makeText(this, "Pengukuran dihentikan", Toast.LENGTH_SHORT).show()
+
+        // Show final BPM value
+        val dataStats = analyzeData(sampleBuffer)
+        val finalBpm = calculateBpm(dataStats.crossings)
+        finalBpm?.let {
+            bpmTextView.text = "Detak Jantung Akhir: ${it.roundToInt()} BPM"
+        }
+
+        startStopButton.removeCallbacks(updateBpmRunnable)
+    }
+
+    private fun startSampling() {
+        Toast.makeText(this, "Memulai Pengukuran...", Toast.LENGTH_SHORT).show()
+    }
+
+    private val updateBpmRunnable = object : Runnable {
+        override fun run() {
+            if (isMonitoring) {
+                val dataStats = analyzeData(sampleBuffer)
+                val bpm = calculateBpm(dataStats.crossings)
+
+                bpm?.let {
+                    bpmTextView.text = "Detak Jantung: ${it.roundToInt()} BPM"
+                }
+                startStopButton.postDelayed(this, 3000)
+            }
+        }
     }
 
     private fun calculateBpm(crossings: List<Long>): Double? {
