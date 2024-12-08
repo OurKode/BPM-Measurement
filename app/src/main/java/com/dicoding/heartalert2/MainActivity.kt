@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
 
     private var isMonitoring = false
     private var sampleBuffer = mutableListOf<Pair<Long, Double>>()
-    private val maxSamples = 60 * 5
+    private val maxSamples = 60 * 5 // 5 seconds at 60 samples per second
     private lateinit var cameraExecutor: ExecutorService
     private var camera: Camera? = null
 
@@ -135,7 +135,6 @@ class MainActivity : AppCompatActivity() {
             camera = null
         }
         startStopButton.text = "Mulai"
-        Toast.makeText(this, "Pengukuran dihentikan", Toast.LENGTH_SHORT).show()
 
         // Show final BPM value
         val dataStats = analyzeData(sampleBuffer)
@@ -158,9 +157,9 @@ class MainActivity : AppCompatActivity() {
                 val bpm = calculateBpm(dataStats.crossings)
 
                 bpm?.let {
-                    bpmTextView.text = "Detak Jantung: ${it.roundToInt()} BPM"
+                    bpmTextView.text = "${it.roundToInt()} BPM"
                 }
-                startStopButton.postDelayed(this, 3000)
+                startStopButton.postDelayed(this, 1000)
             }
         }
     }
