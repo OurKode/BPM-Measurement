@@ -61,7 +61,7 @@ class MeasureFragment : Fragment(R.layout.fragment_measure) {
 
     private fun toggleMonitoring() {
         if (isMonitoring) {
-            stopMonitoring()
+            stopMonitoring(saveResult = true)
         } else {
             startMonitoring()
         }
@@ -88,7 +88,7 @@ class MeasureFragment : Fragment(R.layout.fragment_measure) {
             }
 
             val imageAnalyzer = ImageAnalysis.Builder().build().also {
-                it.setAnalyzer(cameraExecutor, ImageAnalysis.Analyzer { image ->
+                it.setAnalyzer(cameraExecutor) { image ->
                     val brightness = averageBrightness(image)
                     val timestamp = System.currentTimeMillis()
 
@@ -104,7 +104,11 @@ class MeasureFragment : Fragment(R.layout.fragment_measure) {
                                 resetData()
                                 val currentTime = System.currentTimeMillis()
                                 if (currentTime - lastToastTime > 5000) { // 5 seconds delay between toasts
-                                    Toast.makeText(requireContext(), "Pastikan jari anda menutupi kamera.", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        requireContext(),
+                                        "Pastikan jari anda menutupi kamera.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                     lastToastTime = currentTime
                                 }
                             }
@@ -112,7 +116,7 @@ class MeasureFragment : Fragment(R.layout.fragment_measure) {
                     }
 
                     image.close()
-                })
+                }
             }
 
             val cameraSelector = CameraSelector.Builder()
@@ -142,7 +146,7 @@ class MeasureFragment : Fragment(R.layout.fragment_measure) {
         startStopButton.postDelayed(updateBpmRunnable, 1500)
     }
 
-    private fun stopMonitoring() {
+    private fun stopMonitoring(saveResult: Boolean) {
         isMonitoring = false
         camera?.cameraControl?.enableTorch(false)
         camera?.let {
@@ -154,11 +158,13 @@ class MeasureFragment : Fragment(R.layout.fragment_measure) {
 
         timer?.cancel()
 
-        val dataStats = analyzeData(sampleBuffer)
-        val finalBpm = calculateBpm(dataStats.crossings)
-        finalBpm?.let {
-            bpmTextView.text = "Detak Jantung Akhir: ${it.roundToInt()} BPM"
-            saveBpm(finalBpm.roundToInt())
+        if (saveResult) {
+            val dataStats = analyzeData(sampleBuffer)
+            val finalBpm = calculateBpm(dataStats.crossings)
+            finalBpm?.let {
+                bpmTextView.text = "Detak Jantung Akhir: ${it.roundToInt()} BPM"
+                saveBpm(finalBpm.roundToInt())
+            }
         }
 
         startStopButton.removeCallbacks(updateBpmRunnable)
@@ -179,7 +185,7 @@ class MeasureFragment : Fragment(R.layout.fragment_measure) {
             }
 
             override fun onFinish() {
-                stopMonitoring()
+                stopMonitoring(saveResult = true)
             }
         }
         timer?.start()
@@ -287,12 +293,15 @@ class MeasureFragment : Fragment(R.layout.fragment_measure) {
 
     private fun saveBpm(bpm: Int) {
         val sharedPref = requireActivity().getSharedPreferences("HeartRateMonitorPrefs", Context.MODE_PRIVATE)
-        val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-        val success = sharedPref.edit()
-            .putInt("finalBpm", bpm)
-            .putString("timestamp_$bpm", currentTime) // Ensure each BPM has a unique timestamp key
-            .commit()
-        if (success) {
+        val editor = sharedPref.edit()
+        val currentTime = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
+        val uniqueId = System.currentTimeMillis().toString()
+
+        editor.putInt("bpm_$uniqueId", bpm)
+        editor.putString("timestamp_$uniqueId", currentTime)
+        editor.apply()
+
+        if (editor.commit()) {
             Toast.makeText(requireContext(), "BPM berhasil disimpan", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(requireContext(), "Gagal menyimpan BPM", Toast.LENGTH_SHORT).show()
