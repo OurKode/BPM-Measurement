@@ -2,8 +2,10 @@
 package com.dicoding.heartalert2
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
@@ -18,18 +20,24 @@ import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var startStopButton: Button
     private lateinit var bpmTextView: TextView
     private lateinit var previewView: PreviewView
+    private lateinit var timerTextView: TextView
 
     private var isMonitoring = false
     private var sampleBuffer = mutableListOf<Pair<Long, Double>>()
-    private val maxSamples = 60 * 5 // 5 seconds at 60 samples per second
+    private val maxSamples = 60 * 5
     private lateinit var cameraExecutor: ExecutorService
     private var camera: Camera? = null
+    private var timer: CountDownTimer? = null
+    private var lastToastTime: Long = 0 // Variable to store the time of the last toast
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +46,7 @@ class MainActivity : AppCompatActivity() {
         startStopButton = findViewById(R.id.start_stop_button)
         bpmTextView = findViewById(R.id.bpm_text)
         previewView = findViewById(R.id.preview_view)
+        timerTextView = findViewById(R.id.timer_text)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -71,6 +80,8 @@ class MainActivity : AppCompatActivity() {
         bpmTextView.text = "Mengukur..."
         startStopButton.text = "Berhenti"
 
+        startTimer()
+
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
@@ -88,6 +99,16 @@ class MainActivity : AppCompatActivity() {
                             sampleBuffer.add(timestamp to brightness)
                             if (sampleBuffer.size > maxSamples) {
                                 sampleBuffer.removeAt(0)
+                            }
+
+                            val bpm = calculateBpm(analyzeData(sampleBuffer).crossings)
+                            if (bpm != null && (bpm < 40 || bpm > 200)) {
+                                resetData()
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - lastToastTime > 5000) { // 5 seconds delay between toasts
+                                    Toast.makeText(this, "Pastikan jari anda menutupi kamera.", Toast.LENGTH_SHORT).show()
+                                    lastToastTime = currentTime
+                                }
                             }
                         }
                     }
@@ -112,17 +133,14 @@ class MainActivity : AppCompatActivity() {
             }
         }, ContextCompat.getMainExecutor(this))
 
-        // Stabilizing camera image before starting measurements
         cameraProviderFuture.addListener({
             runOnUiThread {
-                Toast.makeText(this, "Stabilizing camera...", Toast.LENGTH_SHORT).show()
                 previewView.postDelayed({
                     startSampling()
-                }, 1500) // Wait for 1.5 seconds
+                }, 1500)
             }
         }, ContextCompat.getMainExecutor(this))
 
-        // Update BPM every 1.5 seconds
         startStopButton.postDelayed(updateBpmRunnable, 1500)
     }
 
@@ -136,14 +154,42 @@ class MainActivity : AppCompatActivity() {
         }
         startStopButton.text = "Mulai"
 
-        // Show final BPM value
+        timer?.cancel()
+
         val dataStats = analyzeData(sampleBuffer)
         val finalBpm = calculateBpm(dataStats.crossings)
         finalBpm?.let {
             bpmTextView.text = "Detak Jantung Akhir: ${it.roundToInt()} BPM"
+            saveBpm(finalBpm.roundToInt())
         }
 
         startStopButton.removeCallbacks(updateBpmRunnable)
+    }
+
+    private fun resetData() {
+        sampleBuffer.clear()
+        bpmTextView.text = "Mengukur..."
+        restartTimer()
+    }
+
+    private fun startTimer() {
+        timer?.cancel() // Ensure no existing timer is running
+        timer = object : CountDownTimer(13000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val secondsRemaining = millisUntilFinished / 1000
+                timerTextView.text = "Waktu Tersisa: $secondsRemaining detik"
+            }
+
+            override fun onFinish() {
+                stopMonitoring()
+            }
+        }
+        timer?.start()
+    }
+
+    private fun restartTimer() {
+        timer?.cancel()
+        startTimer()
     }
 
     private fun startSampling() {
@@ -202,8 +248,8 @@ class MainActivity : AppCompatActivity() {
 
         var sum = 0
         for (i in data.indices step 4) {
-            sum += data[i].toInt() and 0xFF // Red channel
-            sum += data[i + 1].toInt() and 0xFF // Green channel
+            sum += data[i].toInt() and 0xFF
+            sum += data[i + 1].toInt() and 0xFF
         }
 
         val avg = sum / (data.size * 0.5)
@@ -231,6 +277,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
+        timer?.cancel()
     }
 
     companion object {
@@ -239,4 +286,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     data class DataStats(val average: Double, val min: Double, val max: Double, val range: Double, val crossings: List<Long>)
+
+    private fun saveBpm(bpm: Int) {
+        val sharedPref = getSharedPreferences("HeartRateMonitorPrefs", Context.MODE_PRIVATE)
+        val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+        val success = sharedPref.edit().putInt("finalBpm", bpm).putString("timestamp", currentTime).commit()
+        if (success) {
+            Toast.makeText(this, "BPM berhasil disimpan", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Gagal menyimpan BPM", Toast.LENGTH_SHORT).show()
+        }
+    }
 }
