@@ -9,6 +9,8 @@ import android.widget.Button
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.dicoding.heartalert2.adapter.BPMHistoryAdapter
+import com.dicoding.heartalert2.adapter.BPMRecord
 
 class InsightFragment : Fragment() {
 
@@ -37,7 +39,7 @@ class InsightFragment : Fragment() {
         val filterButton: Button = view.findViewById(R.id.button_filter)
         filterButton.setOnClickListener {
             sortByLatest = !sortByLatest
-            filterButton.text = if (sortByLatest) "Sort by Oldest" else "Sort by Latest"
+            filterButton.text = if (sortByLatest) "Terlama" else "Terbaru"
             sortBpmList()
         }
 
