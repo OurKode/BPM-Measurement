@@ -9,8 +9,9 @@ import com.dicoding.intro.ChestPainQuestionFragment
 import com.dicoding.intro.ChestPainSliderFragment
 import com.dicoding.intro.ChestTightnessFragment
 import com.dicoding.intro.GenderFragment
-import com.dicoding.intro.IntroFragment
 import com.dicoding.intro.RestingBpmFragment
+import com.dicoding.heartalert2.ResultFragment
+import com.dicoding.intro.IntroFragment
 
 class ViewPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapter(fragmentActivity) {
     private val fragmentList = listOf(
@@ -21,11 +22,20 @@ class ViewPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapte
         ChestPainSliderFragment(),
         RestingBpmFragment(),
         ActivityBpmFragment(),
-        ChestTightnessFragment()
-        // Add more fragments here for the additional steps
+        ChestTightnessFragment(),
+        ResultFragment()
     )
+
+//    override fun getItemCount(): Int = fragmentList.size + 1
 
     override fun getItemCount(): Int = fragmentList.size
 
-    override fun createFragment(position: Int): Fragment = fragmentList[position]
+    override fun createFragment(position: Int): Fragment {
+        return fragmentList[position]
+//        return if (position < fragmentList.size) {
+//            fragmentList[position]
+//        } else {
+//            ResultFragment() // Pastikan ini hanya diakses di akhir.
+//        }
+    }
 }

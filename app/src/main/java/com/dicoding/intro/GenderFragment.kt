@@ -5,44 +5,46 @@ import androidx.fragment.app.Fragment
 import android.view.View
 import android.widget.Button
 import android.widget.RadioGroup
-import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import com.dicoding.heartalert2.R
-import com.dicoding.heartalert2.SharedPreferencesHelper
+import com.dicoding.heartalert2.AppDataStore
+import com.dicoding.heartalert2.MainActivity
+import kotlinx.coroutines.launch
 
 class GenderFragment : Fragment(R.layout.fragment_gender) {
-    private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
+    private lateinit var appDataStore: AppDataStore
+    private lateinit var genderRadioGroup: RadioGroup
     private lateinit var nextButton: Button
-    private lateinit var radioGroup: RadioGroup
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        sharedPreferencesHelper = SharedPreferencesHelper(requireContext())
+        appDataStore = AppDataStore(requireContext())
 
-        view.findViewById<Button>(R.id.btn_back).setOnClickListener {
-            (activity as IntroActivity).moveToPreviousPage()
-        }
-
+        genderRadioGroup = view.findViewById(R.id.genderRadioGroup)
         nextButton = view.findViewById(R.id.btn_next)
-        radioGroup = view.findViewById(R.id.genderRadioGroup)
 
-        // disable next button initially
-        nextButton.isEnabled = false
-
-        // enable next button only if a gender is selected
-        radioGroup.setOnCheckedChangeListener { _, _ ->
-            nextButton.isEnabled = radioGroup.checkedRadioButtonId != 1
-        }
-
-        nextButton.setOnClickListener{
-            val gender = when (radioGroup.checkedRadioButtonId) {
-                R.id.radio_male -> "Laki-laki"
-                R.id.radio_female -> "Perempuan"
-                else -> ""
+        nextButton.setOnClickListener {
+            val selectedGender = when (genderRadioGroup.checkedRadioButtonId) {
+                R.id.radio_male -> 1
+                R.id.radio_female -> 0
+                else -> -1
             }
-            // Save gender to shared preferences or a temporary variable
-            sharedPreferencesHelper.saveString("gender", gender)
-            Toast.makeText(requireContext(), "Gender berhasil disimpan: $gender", Toast.LENGTH_SHORT).show()
-            (activity as IntroActivity).moveToNextPage()
+
+            lifecycleScope.launch {
+                appDataStore.userInputFlow.collect { userInput ->
+                    appDataStore.saveUserInput(
+                        gender = selectedGender,
+                        age = userInput.age,
+                        chestPainLevel = userInput.chestPainLevel,
+                        restingBpm = userInput.restingBpm,
+                        activityBpm = userInput.activityBpm,
+                        chestTightness = userInput.chestTightness,
+                        date = userInput.date
+                    )
+                }
+
+                (activity as MainActivity).moveToNextPage()
+            }
         }
     }
 }

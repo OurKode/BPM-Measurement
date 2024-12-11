@@ -16,10 +16,9 @@ import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.dicoding.heartalert2.MainActivity
 import com.dicoding.heartalert2.SharedPreferencesHelper
 import java.nio.ByteBuffer
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
@@ -56,7 +55,14 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         startStopButton.setOnClickListener { toggleMonitoring() }
 
         view.findViewById<Button>(R.id.btn_back).setOnClickListener {
-            (activity as IntroActivity).moveToPreviousPage()
+            stopMonitoring(saveResult = true) // Hentikan pengukuran
+            val chestPainQuestionAnswer = sharedPreferencesHelper.getInt("chestPainLevel", -1)
+            if (chestPainQuestionAnswer == 0) {
+            // Jika pengguna memilih 'no' pada chest pain question
+                (activity as MainActivity).moveToPage(3)
+            } else {
+                (activity as MainActivity).moveToPage(4)
+            }
         }
 
         // Disable next button initially
@@ -64,7 +70,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         nextButton.setOnClickListener {
             // Ensure BPM measurement is completed before proceeding
             if (!isMonitoring) {
-                (activity as IntroActivity).moveToNextPage()
+                (activity as MainActivity).moveToNextPage()
             } else {
                 Toast.makeText(requireContext(), "Selesaikan pengukuran terlebih dahulu", Toast.LENGTH_SHORT).show()
             }
@@ -81,7 +87,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
 
     private fun toggleMonitoring() {
         if (isMonitoring) {
-            stopMonitoring(saveResult = false)
+            stopMonitoring(saveResult = true)
         } else {
             startMonitoring()
         }
@@ -182,9 +188,19 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
             val dataStats = analyzeData(sampleBuffer)
             val finalBpm = calculateBpm(dataStats.crossings)
             finalBpm?.let {
-                bpmTextView.text = "Detak Jantung Anda: ${it.roundToInt()} BPM"
-                saveBpm(finalBpm.roundToInt())
-                Toast.makeText(requireContext(), "Resting BPM berhasil disimpan:(${it.roundToInt()}", Toast.LENGTH_SHORT).show()
+                val roundedBpm = it.roundToInt()
+                if (roundedBpm in 40..200) { // Rentang valid BPM
+                    bpmTextView.text = "Detak Jantung Anda: $roundedBpm BPM"
+                    saveBpm(roundedBpm)
+                    Toast.makeText(requireContext(), "Resting BPM berhasil disimpan: $roundedBpm", Toast.LENGTH_SHORT).show()
+                } else {
+                    bpmTextView.text = "Pengukuran tidak valid. Coba lagi."
+                    Toast.makeText(requireContext(), "Nilai BPM tidak valid. Pastikan jari Anda stabil.", Toast.LENGTH_SHORT).show()
+                }
+            } ?: run{
+                bpmTextView.text = "Gagal menghitung BPM. Coba lagi."
+                // Handdle case where BPM calculation fails
+                Log.d("RestingBpmFragment", "BPM calculation failed")
             }
             nextButton.isEnabled = true
         }
@@ -306,19 +322,17 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
     }
 
     private fun saveBpm(bpm: Int) {
-        val sharedPref = requireActivity().getSharedPreferences("HeartRateMonitorPrefs", Context.MODE_PRIVATE)
+        val sharedPref = requireActivity().getSharedPreferences("HeartAlertPrefs", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
-        val currentTime = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
-        val uniqueId = System.currentTimeMillis().toString()
-
-        editor.putInt("restingBpm_$uniqueId", bpm)
-        editor.putString("timestamp_$uniqueId", currentTime)
-        editor.apply()
-
-        if (editor.commit()) {
-            Toast.makeText(requireContext(), "BPM berhasil disimpan", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(requireContext(), "Gagal menyimpan BPM", Toast.LENGTH_SHORT).show()
+        // get current date
+//        val currentTime = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
+        if (bpm > 0) {
+            Log.d("RestingBpmFragment", "Saving BPM: $bpm")
+            editor.putInt("restingBpm", bpm)
+            editor.apply()
+    } else {
+        Log.d("RestingBpmFragment", "Invalid BPM value, not saving")
+            Toast.makeText(requireContext(), "Nilai BPM tidak Valid", Toast.LENGTH_SHORT).show()
         }
     }
 

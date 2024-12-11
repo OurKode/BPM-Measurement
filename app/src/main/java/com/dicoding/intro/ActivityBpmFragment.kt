@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
+import android.view.SurfaceView
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
@@ -16,6 +17,8 @@ import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import com.dicoding.heartalert2.MainActivity
 import com.dicoding.heartalert2.SharedPreferencesHelper
 import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
@@ -27,6 +30,7 @@ import java.util.Date
 import java.util.Locale
 
 class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
+    private lateinit var cameraPreview: Preview
     private lateinit var startStopButton: Button
     private lateinit var bpmTextView: TextView
     private lateinit var previewView: PreviewView
@@ -45,7 +49,6 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         sharedPreferencesHelper = SharedPreferencesHelper(requireContext())
-
         startStopButton = view.findViewById(R.id.start_stop_button)
         bpmTextView = view.findViewById(R.id.bpm_text)
         previewView = view.findViewById(R.id.preview_view)
@@ -57,7 +60,8 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         startStopButton.setOnClickListener { toggleMonitoring() }
 
         view.findViewById<Button>(R.id.btn_back).setOnClickListener {
-            (activity as IntroActivity).moveToPreviousPage()
+            stopMonitoring() // Menghentikan Pengukuran
+            (activity as MainActivity).moveToPreviousPage()
         }
 
         // Disable next button initially
@@ -65,7 +69,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         nextButton.setOnClickListener {
             // Ensure BPM measurement is completed before proceeding
             if (!isMonitoring) {
-                (activity as IntroActivity).moveToNextPage()
+                (activity as MainActivity).moveToNextPage()
             } else {
                 Toast.makeText(requireContext(), "Selesaikan pengukuran terlebih dahulu", Toast.LENGTH_SHORT).show()
             }
@@ -113,7 +117,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
             }
 
             val imageAnalyzer = ImageAnalysis.Builder().build().also {
-                it.setAnalyzer(cameraExecutor, ImageAnalysis.Analyzer { image ->
+                it.setAnalyzer(cameraExecutor) { image ->
                     val brightness = averageBrightness(image)
                     val timestamp = System.currentTimeMillis()
 
@@ -141,7 +145,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
                     }
 
                     image.close()
-                })
+                }
             }
 
             val cameraSelector = CameraSelector.Builder()
@@ -171,7 +175,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         startStopButton.postDelayed(updateBpmRunnable, 1500)
     }
 
-    private fun stopMonitoring(saveResult: Boolean) {
+    private fun stopMonitoring(saveResult: Boolean = false) {
         isMonitoring = false
         camera?.cameraControl?.enableTorch(false)
         camera?.let {
@@ -187,7 +191,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
             val dataStats = analyzeData(sampleBuffer)
             val finalBpm = calculateBpm(dataStats.crossings)
             finalBpm?.let {
-                bpmTextView.text = "Detak Jantung Akhir: ${it.roundToInt()} BPM"
+                bpmTextView.text = "Activity BPM: ${it.roundToInt()} BPM"
                 saveBpm(finalBpm.roundToInt())
                 Toast.makeText(requireContext(), "Activity BPM berhasil disimpan:(${it.roundToInt()}", Toast.LENGTH_SHORT).show()
             }
@@ -224,7 +228,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
     }
 
     private fun startSampling() {
-        Toast.makeText(requireContext(), "Memulai Pengukuran...", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(requireContext(), "Memulai Pengukuran...", Toast.LENGTH_SHORT).show()
     }
 
     private val updateBpmRunnable = object : Runnable {
@@ -320,21 +324,16 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
 
     private fun saveBpm(bpm: Int) {
         val sharedPref =
-            requireActivity().getSharedPreferences("HeartRateMonitorPrefs", Context.MODE_PRIVATE)
+            requireActivity().getSharedPreferences("HeartAlertPrefs", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
-        val currentTime =
-            SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
-        val uniqueId = System.currentTimeMillis().toString()
+        // get current date
+        val currentTime = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
+//        val uniqueId = System.currentTimeMillis().toString()
 
-        editor.putInt("activityBpm_$uniqueId", bpm)
-        editor.putString("timestamp_$uniqueId", currentTime)
+        // use consistent keys for storing activityBpm
+        editor.putInt("activityBpm", bpm)
+//        editor.putString("timestamp", currentTime)
         editor.apply()
-
-        if (editor.commit()) {
-            Toast.makeText(requireContext(), "BPM berhasil disimpan", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(requireContext(), "Gagal menyimpan BPM", Toast.LENGTH_SHORT).show()
-        }
     }
 
     companion object {

@@ -1,41 +1,40 @@
 package com.dicoding.intro
 
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
+import android.os.Handler
+import android.os.Looper
 import androidx.fragment.app.Fragment
 import android.view.View
 import android.widget.Button
 import android.widget.RadioGroup
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
+import com.dicoding.heartalert2.AppDataStore
 import com.dicoding.heartalert2.MainActivity
 import com.dicoding.heartalert2.R
-import com.dicoding.heartalert2.SharedPreferencesHelper
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ChestTightnessFragment : Fragment(R.layout.fragment_chest_tightness) {
-    private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
     private lateinit var finishButton: Button
     private lateinit var radioGroup: RadioGroup
+    private lateinit var appDataStore: AppDataStore
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        sharedPreferencesHelper = SharedPreferencesHelper(requireContext())
+        appDataStore = AppDataStore(requireContext())
 
         view.findViewById<Button>(R.id.btn_back).setOnClickListener {
-            (activity as IntroActivity).moveToPreviousPage()
+            (activity as MainActivity).moveToPreviousPage()
         }
 
         finishButton = view.findViewById(R.id.btn_finish)
-        Log.d("ChestTightnessFragment", "Finish button initialized: ${finishButton}")
-
         radioGroup = view.findViewById(R.id.chestTightnessRadioGroup)
-        Log.d("ChestTightnessFragment", "Radio group initialized: ${radioGroup}")
 
-        // Disable finish button initially
         finishButton.isEnabled = false
 
-        // Enable finish button only if a selection is made
         radioGroup.setOnCheckedChangeListener { _, _ ->
             finishButton.isEnabled = radioGroup.checkedRadioButtonId != -1
         }
@@ -46,18 +45,30 @@ class ChestTightnessFragment : Fragment(R.layout.fragment_chest_tightness) {
                 R.id.radio_no -> 0
                 else -> 0
             }
-            sharedPreferencesHelper.saveInt("chestTightness", chestTightness)
-            Toast.makeText(requireContext(), "Data sesak dada berhasil disimpan: ${if (chestTightness == 1) "Ya" else "Tidak"} ($chestTightness)", Toast.LENGTH_SHORT).show()
 
-            // Selesaikan onboarding dan mulai MainActivity
-            val sharedPreferences = requireActivity().getSharedPreferences("HeartAlertPrefs", Context.MODE_PRIVATE)
-            val editor = sharedPreferences.edit()
-            editor.putBoolean("isFirstTime", false)
-            editor.apply()
+            // Get current date
+            val currentDate = SimpleDateFormat("dd-MMM-yy HH:mm:ss", Locale.getDefault()).format(Date())
 
-            val intent = Intent(requireActivity(), MainActivity::class.java)
-            startActivity(intent)
-            requireActivity().finish()
+            lifecycleScope.launch {
+                // Retrieve other inputs from DataStore
+                appDataStore.userInputFlow.collect { userInput ->
+                    appDataStore.saveUserInput(
+                        gender = userInput.gender,
+                        age = userInput.age,
+                        chestPainLevel = userInput.chestPainLevel,
+                        restingBpm = userInput.restingBpm,
+                        activityBpm = userInput.activityBpm,
+                        chestTightness = chestTightness,
+                        date = currentDate
+                    )
+                }
+
+                Toast.makeText(requireContext(), "Semua data berhasil disimpan", Toast.LENGTH_SHORT).show()
+
+                Handler(Looper.getMainLooper()).postDelayed({
+                    (activity as MainActivity).moveToNextPage()
+                }, 1000) // 1 second delay
+            }
         }
     }
 }
