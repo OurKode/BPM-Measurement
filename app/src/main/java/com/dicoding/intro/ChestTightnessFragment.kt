@@ -9,9 +9,11 @@ import android.widget.Button
 import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.dicoding.heartalert2.AppDataStore
 import com.dicoding.heartalert2.MainActivity
 import com.dicoding.heartalert2.R
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -25,10 +27,6 @@ class ChestTightnessFragment : Fragment(R.layout.fragment_chest_tightness) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         appDataStore = AppDataStore(requireContext())
-
-        view.findViewById<Button>(R.id.btn_back).setOnClickListener {
-            (activity as MainActivity).moveToPreviousPage()
-        }
 
         finishButton = view.findViewById(R.id.btn_finish)
         radioGroup = view.findViewById(R.id.chestTightnessRadioGroup)
@@ -47,27 +45,30 @@ class ChestTightnessFragment : Fragment(R.layout.fragment_chest_tightness) {
             }
 
             // Get current date
-            val currentDate = SimpleDateFormat("dd-MMM-yy HH:mm:ss", Locale.getDefault()).format(Date())
+            val currentDate =
+                SimpleDateFormat("dd-MMM-yy HH:mm:ss", Locale.getDefault()).format(Date())
 
             lifecycleScope.launch {
-                // Retrieve other inputs from DataStore
-                appDataStore.userInputFlow.collect { userInput ->
-                    appDataStore.saveUserInput(
-                        gender = userInput.gender,
-                        age = userInput.age,
-                        chestPainLevel = userInput.chestPainLevel,
-                        restingBpm = userInput.restingBpm,
-                        activityBpm = userInput.activityBpm,
-                        chestTightness = chestTightness,
-                        date = currentDate
-                    )
-                }
+                val userInput = appDataStore.userInputFlow.first() // Ambil data sekali
+
+                appDataStore.saveUserInput(
+                    gender = userInput.gender,
+                    age = userInput.age,
+                    chestPainLevel = userInput.chestPainLevel,
+                    restingBpm = userInput.restingBpm,
+                    activityBpm = userInput.activityBpm,
+                    chestTightness = chestTightness,
+                    date = currentDate
+                )
             }
             Toast.makeText(requireContext(), "Semua data berhasil disimpan", Toast.LENGTH_SHORT).show()
 
             Handler(Looper.getMainLooper()).postDelayed({
-                (activity as MainActivity).moveToNextPage()
+                findNavController().navigate(R.id.action_chestTightnessFragment_to_resultFragment)
             }, 1000) // 1 second delay
+        }
+        view.findViewById<Button>(R.id.btn_back).setOnClickListener {
+            findNavController().popBackStack()
         }
     }
 }

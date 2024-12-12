@@ -17,6 +17,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.dicoding.heartalert2.AppDataStore
 import com.dicoding.heartalert2.MainActivity
 import com.dicoding.heartalert2.SharedPreferencesHelper
@@ -35,7 +36,6 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
     private lateinit var previewView: PreviewView
     private lateinit var timerTextView: TextView
     private lateinit var nextButton: Button
-    private lateinit var backButton: Button
     private lateinit var appDataStore: AppDataStore
 
     private var isMonitoring = false
@@ -55,7 +55,6 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         previewView = view.findViewById(R.id.preview_view)
         timerTextView = view.findViewById(R.id.timer_text)
         nextButton = view.findViewById(R.id.btn_next)
-        backButton = view.findViewById(R.id.btn_back)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -63,7 +62,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
 
         view.findViewById<Button>(R.id.btn_back).setOnClickListener {
             stopMonitoring(saveResult = true) // Hentikan pengukuran
-            (activity as MainActivity).moveToPreviousPage()
+            findNavController().popBackStack()
 //            val chestPainQuestionAnswer = sharedPreferencesHelper.getInt("chestPainLevel", -1)
 //            if (chestPainQuestionAnswer == 0) {
 //            // Jika pengguna memilih 'no' pada chest pain question
@@ -78,7 +77,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         nextButton.setOnClickListener {
             // Ensure BPM measurement is completed before proceeding
             if (!isMonitoring) {
-                (activity as MainActivity).moveToNextPage()
+                findNavController().navigate(R.id.action_restingBpmFragment_to_activityBpmFragment)
             } else {
                 Toast.makeText(requireContext(), "Selesaikan pengukuran terlebih dahulu", Toast.LENGTH_SHORT).show()
             }
@@ -181,13 +180,15 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
     }
 
     private fun stopMonitoring(saveResult: Boolean) {
+        Log.d("RestingBpmFragment", "stopMonitoring: Monitoring dihentikan. saveResult=$saveResult")
+
         isMonitoring = false
         camera?.cameraControl?.enableTorch(false)
         camera?.let {
             val cameraProvider = ProcessCameraProvider.getInstance(requireContext()).get()
             cameraProvider.unbindAll()
-            camera = null
         }
+        camera = null
         startStopButton.text = "Mulai"
 
         timer?.cancel()
@@ -195,6 +196,8 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         if (saveResult) {
             val dataStats = analyzeData(sampleBuffer)
             val finalBpm = calculateBpm(dataStats.crossings)
+            Log.d("RestingBpmFragment", "stopMonitoring: BPM final=$finalBpm, DataStats=$dataStats.")
+
             finalBpm?.let {
                 val roundedBpm = it.roundToInt()
                 if (roundedBpm in 40..200) { // Rentang valid BPM
@@ -251,9 +254,12 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
             if (isMonitoring) {
                 val dataStats = analyzeData(sampleBuffer)
                 val bpm = calculateBpm(dataStats.crossings)
+                Log.d("RestingBpmFragment", "updateBpmRunnable: DataStats=$dataStats, BPM=$bpm.")
 
                 bpm?.let {
                     bpmTextView.text = "${it.roundToInt()} BPM"
+                } ?: run{
+                    Log.e("RestingBpmFragment", "updateBpmRunnable: Gagal menghitung BPM.")
                 }
                 startStopButton.postDelayed(this, 1000)
             }
@@ -268,26 +274,42 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
     }
 
     private fun analyzeData(samples: List<Pair<Long, Double>>): DataStats {
+        if (samples.isEmpty()) {
+            Log.e("RestingBpmFragment", "Samples kosong pada analyzeData.")
+            return DataStats(0.0, 0.0, 0.0, 0.0, emptyList())
+        }
+
         val average = samples.map { it.second }.average()
         val min = samples.minOf { it.second }
         val max = samples.maxOf { it.second }
         val range = max - min
 
+        Log.d("RestingBpmFragment", "analyzeData: Jumlah samples=${samples.size}, average=$average, min=$min, max=$max, range=$range.")
+
         val crossings = getAverageCrossings(samples, average)
+        Log.d("RestingBpmFragment", "analyzeData: Jumlah crossings=${crossings.size}.")
+
         return DataStats(average, min, max, range, crossings)
     }
 
     private fun getAverageCrossings(samples: List<Pair<Long, Double>>, average: Double): List<Long> {
+        if (samples.isEmpty()) {
+            Log.e("RestingBpmFragment", "Samples kosong pada getAverageCrossings.")
+            return emptyList()
+        }
+
         val crossingsSamples = mutableListOf<Long>()
         var previousSample = samples[0]
 
         for (currentSample in samples) {
             if (currentSample.second < average && previousSample.second > average) {
                 crossingsSamples.add(currentSample.first)
+                Log.d("RestingBpmFragment", "getAverageCrossings: Crossing ditemukan pada timestamp=${currentSample.first}.")
             }
             previousSample = currentSample
         }
 
+        Log.d("RestingBpmFragment", "getAverageCrossings: Total crossings=${crossingsSamples.size}.")
         return crossingsSamples
     }
 
@@ -303,8 +325,9 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         }
 
         val avg = sum / (data.size * 0.5)
-
-        return avg / 255
+        val brightness = avg / 255
+        Log.d("RestingBpmFragment", "averageBrightness: Brightness rata-rata=$brightness.")
+        return brightness
     }
 
     private fun permissionsGranted() = arrayOf(
@@ -326,6 +349,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
 
     override fun onDestroy() {
         super.onDestroy()
+        stopMonitoring(saveResult = true)
         cameraExecutor.shutdown()
     }
 

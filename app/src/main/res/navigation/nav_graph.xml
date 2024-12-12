@@ -12,9 +12,6 @@
         <action
             android:id="@+id/action_introFragment_to_genderFragment"
             app:destination="@id/genderFragment" />
-<!--        <action-->
-<!--            android:id="@+id/action_introFragment_to_allHistoryFragment"-->
-<!--            app:destination="@id/allHistoryFragment" />-->
     </fragment>
     <fragment
         android:id="@+id/genderFragment"
@@ -94,23 +91,15 @@
         android:label="Result"
         tools:layout="@layout/fragment_result">
         <action
-            android:id="@+id/action_resultFragment_to_allHistoryFragment"
-            app:destination="@id/allHistoryFragment" />
+            android:id="@+id/action_resultFragment_to_articleDetailFragment"
+            app:destination="@id/articleDetailFragment" />
+        <action
+            android:id="@+id/action_resultFragment_to_introFragment"
+            app:destination="@+id/introFragment"/>
     </fragment>
     <fragment
-        android:id="@+id/allHistoryFragment"
-        android:name="com.dicoding.heartalert2.AllHistoryFragment"
-        android:label="All History"
-        tools:layout="@layout/fragment_all_history" >
-<!--        <action-->
-<!--            android:id="@+id/action_allHistoryFragment_to_resultFragment"-->
-<!--            app:destination="@id/resultFragment" >-->
-<!--            <argument-->
-<!--                android:name="date"-->
-<!--                app:argType="string" />-->
-<!--            <argument-->
-<!--                android:name="result"-->
-<!--                app:argType="string" />-->
-<!--        </action>-->
-    </fragment>
+        android:id="@+id/articleDetailFragment"
+        android:name="com.dicoding.heartalert2.article.ArticleDetailFragment"
+        android:label="Detail Article"
+        tools:layout="@layout/fragment_article_detail"/>
 </navigation>

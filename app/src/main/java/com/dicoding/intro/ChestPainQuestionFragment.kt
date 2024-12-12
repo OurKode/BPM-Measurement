@@ -6,9 +6,10 @@ import android.view.View
 import android.widget.Button
 import android.widget.RadioGroup
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.dicoding.heartalert2.AppDataStore
-import com.dicoding.heartalert2.MainActivity
 import com.dicoding.heartalert2.R
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class ChestPainQuestionFragment : Fragment(R.layout.fragment_chest_pain_question) {
@@ -36,28 +37,26 @@ class ChestPainQuestionFragment : Fragment(R.layout.fragment_chest_pain_question
 
             // Save chest pain level to DataStore
             lifecycleScope.launch {
-                appDataStore.userInputFlow.collect { userInput ->
-                    appDataStore.saveUserInput(
-                        gender = userInput.gender,
-                        age = userInput.age,
-                        chestPainLevel = chestPainLevel,
-                        restingBpm = userInput.restingBpm,
-                        activityBpm = userInput.activityBpm,
-                        chestTightness = userInput.chestTightness,
-                        date = userInput.date
-                    )
-                }
+                val userInput = appDataStore.userInputFlow.first()
+                appDataStore.saveUserInput(
+                    gender = userInput.gender,
+                    age = userInput.age,
+                    chestPainLevel = chestPainLevel,
+                    restingBpm = userInput.restingBpm,
+                    activityBpm = userInput.activityBpm,
+                    chestTightness = userInput.chestTightness,
+                    date = userInput.date
+                )
             }
             if (radioGroup.checkedRadioButtonId == R.id.radio_no) {
-            // Langsung ke RestingBpmFragment
-            (activity as MainActivity).moveToPage(5) // 5 adalah posisi RestingBpmFragment
+                // Langsung ke RestingBpmFragment
+                findNavController().navigate(R.id.action_chestPainQuestionFragment_to_restingBpmFragment)
             } else {
-                (activity as MainActivity).moveToNextPage()
+                findNavController().navigate(R.id.action_chestPainQuestionFragment_to_chestPainSliderFragment)
             }
         }
-
         backButton.setOnClickListener {
-            (activity as MainActivity).moveToPreviousPage()
+            findNavController().popBackStack()
         }
     }
 }

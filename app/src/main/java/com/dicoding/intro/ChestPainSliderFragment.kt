@@ -8,12 +8,14 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.dicoding.heartalert2.AppDataStore
 import com.dicoding.heartalert2.MainActivity
 import com.dicoding.heartalert2.R
 import com.dicoding.heartalert2.SharedPreferencesHelper
 
 import com.google.android.material.slider.Slider
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class ChestPainSliderFragment : Fragment(R.layout.fragment_chest_pain_slider) {
@@ -25,10 +27,6 @@ class ChestPainSliderFragment : Fragment(R.layout.fragment_chest_pain_slider) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         appDataStore = AppDataStore(requireContext())
-
-        view.findViewById<Button>(R.id.btn_back).setOnClickListener {
-            (activity as MainActivity).moveToPreviousPage()
-        }
 
         nextButton = view.findViewById(R.id.btn_next)
         slider = view.findViewById(R.id.slider_chest_pain)
@@ -45,19 +43,21 @@ class ChestPainSliderFragment : Fragment(R.layout.fragment_chest_pain_slider) {
             val chestPainLevel = slider.value.toInt() // 1 to 3
             // Save chest pain level to DataStore
             lifecycleScope.launch {
-                appDataStore.userInputFlow.collect { userInput ->
-                    appDataStore.saveUserInput(
-                        gender = userInput.gender,
-                        age = userInput.age,
-                        chestPainLevel = chestPainLevel,
-                        restingBpm = userInput.restingBpm,
-                        activityBpm = userInput.activityBpm,
-                        chestTightness = userInput.chestTightness,
-                        date = userInput.date
-                    )
-                }
+                val userInput = appDataStore.userInputFlow.first()
+                appDataStore.saveUserInput(
+                    gender = userInput.gender,
+                    age = userInput.age,
+                    chestPainLevel = chestPainLevel,
+                    restingBpm = userInput.restingBpm,
+                    activityBpm = userInput.activityBpm,
+                    chestTightness = userInput.chestTightness,
+                    date = userInput.date
+                )
             }
-            (activity as MainActivity).moveToNextPage()
+            findNavController().navigate(R.id.action_chestPainSliderFragment_to_restingBpmFragment)
+        }
+        view.findViewById<Button>(R.id.btn_back).setOnClickListener {
+            findNavController().popBackStack()
         }
     }
 }

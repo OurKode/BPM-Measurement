@@ -6,9 +6,10 @@ import android.view.View
 import android.widget.Button
 import android.widget.RadioGroup
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.dicoding.heartalert2.R
 import com.dicoding.heartalert2.AppDataStore
-import com.dicoding.heartalert2.MainActivity
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class GenderFragment : Fragment(R.layout.fragment_gender) {
@@ -26,34 +27,35 @@ class GenderFragment : Fragment(R.layout.fragment_gender) {
         backButton = view.findViewById(R.id.btn_back)
 
         nextButton.isEnabled = false
+
         genderRadioGroup.setOnCheckedChangeListener { _, _ ->
             nextButton.isEnabled = genderRadioGroup.checkedRadioButtonId != -1
+        }
 
-            nextButton.setOnClickListener {
-                val selectedGender = when (genderRadioGroup.checkedRadioButtonId) {
-                    R.id.radio_male -> 1
-                    R.id.radio_female -> 0
-                    else -> -1
-                }
+        nextButton.setOnClickListener {
+            val selectedGender = when (genderRadioGroup.checkedRadioButtonId) {
+                R.id.radio_male -> 1
+                R.id.radio_female -> 0
+                else -> -1
+            }
 
-                lifecycleScope.launch {
-                    appDataStore.userInputFlow.collect { userInput ->
-                        appDataStore.saveUserInput(
-                            gender = selectedGender,
-                            age = userInput.age,
-                            chestPainLevel = userInput.chestPainLevel,
-                            restingBpm = userInput.restingBpm,
-                            activityBpm = userInput.activityBpm,
-                            chestTightness = userInput.chestTightness,
-                            date = userInput.date
-                        )
-                    }
-                }
-                (activity as MainActivity).moveToNextPage()
+            lifecycleScope.launch {
+                val userInput = appDataStore.userInputFlow.first() // Ambil data sekali
+                appDataStore.saveUserInput(
+                    gender = selectedGender,
+                    age = userInput.age,
+                    chestPainLevel = userInput.chestPainLevel,
+                    restingBpm = userInput.restingBpm,
+                    activityBpm = userInput.activityBpm,
+                    chestTightness = userInput.chestTightness,
+                    date = userInput.date
+                )
             }
-            backButton.setOnClickListener {
-                (activity as MainActivity).moveToPreviousPage()
-            }
+            // Navigasi ke AgeFragment
+            findNavController().navigate(R.id.action_genderFragment_to_ageFragment)
+        }
+        backButton.setOnClickListener {
+            findNavController().popBackStack()
         }
     }
 }

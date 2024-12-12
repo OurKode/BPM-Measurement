@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.fir.declarations.builder.buildScript
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -29,6 +27,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -58,9 +57,8 @@ dependencies {
     implementation ("androidx.camera:camera-lifecycle:1.4.0")
     implementation ("androidx.camera:camera-view:1.4.0")
 // bottom navigation
-    implementation ("androidx.navigation:navigation-fragment-ktx:2.3.5")
-    implementation ("androidx.navigation:navigation-ui-ktx:2.3.5")
-    implementation ("com.google.android.material:material:1.3.0")
+    implementation (libs.androidx.navigation.fragment.ktx)
+    implementation (libs.androidx.navigation.ui.ktx)
 // view pager
     implementation ("androidx.viewpager2:viewpager2:1.0.0")
     implementation ("androidx.fragment:fragment-ktx:1.3.5")
@@ -71,6 +69,7 @@ dependencies {
     implementation (libs.converter.gson)
     implementation (libs.logging.interceptor)
     implementation (libs.glide)
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.12.0")
 
     implementation (libs.material)
 

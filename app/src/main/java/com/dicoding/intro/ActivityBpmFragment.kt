@@ -39,7 +39,6 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
     private lateinit var previewView: PreviewView
     private lateinit var timerTextView: TextView
     private lateinit var nextButton: Button
-    private lateinit var backButton: Button
     private lateinit var appDataStore: AppDataStore
 
     private var isMonitoring = false
@@ -59,7 +58,6 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         previewView = view.findViewById(R.id.preview_view)
         timerTextView = view.findViewById(R.id.timer_text)
         nextButton = view.findViewById(R.id.btn_next)
-        backButton = view.findViewById(R.id.btn_back)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -67,7 +65,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
 
         view.findViewById<Button>(R.id.btn_back).setOnClickListener {
             stopMonitoring(saveResult = true) // Hentikan pengukuran
-            (activity as MainActivity).moveToPreviousPage()
+            findNavController().popBackStack()
 //            val chestPainQuestionAnswer = sharedPreferencesHelper.getInt("chestPainLevel", -1)
 //            if (chestPainQuestionAnswer == 0) {
 //            // Jika pengguna memilih 'no' pada chest pain question
@@ -82,7 +80,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         nextButton.setOnClickListener {
             // Ensure BPM measurement is completed before proceeding
             if (!isMonitoring) {
-                (activity as MainActivity).moveToNextPage()
+                findNavController().navigate(R.id.action_activityBpmFragment_to_chestTightnessFragment  )
             } else {
                 Toast.makeText(requireContext(), "Selesaikan pengukuran terlebih dahulu", Toast.LENGTH_SHORT).show()
             }
@@ -185,13 +183,15 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
     }
 
     private fun stopMonitoring(saveResult: Boolean) {
+        Log.d("ActivityBpmFragment", "stopMonitoring: Monitoring dihentikan. saveResult=$saveResult")
+
         isMonitoring = false
         camera?.cameraControl?.enableTorch(false)
         camera?.let {
             val cameraProvider = ProcessCameraProvider.getInstance(requireContext()).get()
             cameraProvider.unbindAll()
-            camera = null
         }
+        camera = null
         startStopButton.text = "Mulai"
 
         timer?.cancel()
@@ -199,6 +199,8 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         if (saveResult) {
             val dataStats = analyzeData(sampleBuffer)
             val finalBpm = calculateBpm(dataStats.crossings)
+            Log.d("ActivityBpmFragment", "stopMonitoring: BPM final=$finalBpm, DataStats=$dataStats.")
+
             finalBpm?.let {
                 val roundedBpm = it.roundToInt()
                 if (roundedBpm in 40..200) { // Rentang valid BPM
@@ -255,9 +257,12 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
             if (isMonitoring) {
                 val dataStats = analyzeData(sampleBuffer)
                 val bpm = calculateBpm(dataStats.crossings)
+                Log.d("ActivityBpmFragment", "updateBpmRunnable: DataStats=$dataStats, BPM=$bpm.")
 
                 bpm?.let {
                     bpmTextView.text = "${it.roundToInt()} BPM"
+                } ?: run{
+                    Log.e("ActivityBpmFragment", "updateBpmRunnable: Gagal menghitung BPM.")
                 }
                 startStopButton.postDelayed(this, 1000)
             }
@@ -272,26 +277,42 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
     }
 
     private fun analyzeData(samples: List<Pair<Long, Double>>): DataStats {
+        if (samples.isEmpty()) {
+            Log.e("ActivityBpmFragment", "Samples kosong pada analyzeData.")
+            return DataStats(0.0, 0.0, 0.0, 0.0, emptyList())
+        }
+
         val average = samples.map { it.second }.average()
         val min = samples.minOf { it.second }
         val max = samples.maxOf { it.second }
         val range = max - min
 
+        Log.d("ActivityBpmFragment", "analyzeData: Jumlah samples=${samples.size}, average=$average, min=$min, max=$max, range=$range.")
+
         val crossings = getAverageCrossings(samples, average)
+        Log.d("ActivityBpmFragment", "analyzeData: Jumlah crossings=${crossings.size}.")
+
         return DataStats(average, min, max, range, crossings)
     }
 
     private fun getAverageCrossings(samples: List<Pair<Long, Double>>, average: Double): List<Long> {
+        if (samples.isEmpty()) {
+            Log.e("ActivityBpmFragment", "Samples kosong pada getAverageCrossings.")
+            return emptyList()
+        }
+
         val crossingsSamples = mutableListOf<Long>()
         var previousSample = samples[0]
 
         for (currentSample in samples) {
             if (currentSample.second < average && previousSample.second > average) {
                 crossingsSamples.add(currentSample.first)
+                Log.d("ActivityBpmFragment", "getAverageCrossings: Crossing ditemukan pada timestamp=${currentSample.first}.")
             }
             previousSample = currentSample
         }
 
+        Log.d("ActivityBpmFragment", "getAverageCrossings: Total crossings=${crossingsSamples.size}.")
         return crossingsSamples
     }
 
@@ -307,8 +328,9 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         }
 
         val avg = sum / (data.size * 0.5)
-
-        return avg / 255
+        val brightness = avg / 255
+        Log.d("ActivityBpmFragment", "averageBrightness: Brightness rata-rata=$brightness.")
+        return brightness
     }
 
     private fun permissionsGranted() = arrayOf(
@@ -330,6 +352,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
 
     override fun onDestroy() {
         super.onDestroy()
+        stopMonitoring(saveResult = true)
         cameraExecutor.shutdown()
     }
 
