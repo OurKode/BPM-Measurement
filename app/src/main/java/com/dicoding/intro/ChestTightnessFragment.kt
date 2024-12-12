@@ -3,6 +3,7 @@ package com.dicoding.intro
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.View
 import android.widget.Button
@@ -45,12 +46,10 @@ class ChestTightnessFragment : Fragment(R.layout.fragment_chest_tightness) {
             }
 
             // Get current date
-            val currentDate =
-                SimpleDateFormat("dd-MMM-yy HH:mm:ss", Locale.getDefault()).format(Date())
+            val currentDate = SimpleDateFormat("dd-MMM-yy HH:mm:ss", Locale.getDefault()).format(Date())
 
             lifecycleScope.launch {
                 val userInput = appDataStore.userInputFlow.first() // Ambil data sekali
-
                 appDataStore.saveUserInput(
                     gender = userInput.gender,
                     age = userInput.age,
@@ -60,12 +59,11 @@ class ChestTightnessFragment : Fragment(R.layout.fragment_chest_tightness) {
                     chestTightness = chestTightness,
                     date = currentDate
                 )
+                Log.d("ChestTightnessFragment", "Data disimpan: chestTightness=$chestTightness, date=$currentDate")
             }
-            Toast.makeText(requireContext(), "Semua data berhasil disimpan", Toast.LENGTH_SHORT).show()
 
-            Handler(Looper.getMainLooper()).postDelayed({
-                findNavController().navigate(R.id.action_chestTightnessFragment_to_resultFragment)
-            }, 1000) // 1 second delay
+            Toast.makeText(requireContext(), "Semua data berhasil disimpan", Toast.LENGTH_SHORT).show()
+            findNavController().navigate(R.id.action_chestTightnessFragment_to_resultFragment)
         }
         view.findViewById<Button>(R.id.btn_back).setOnClickListener {
             findNavController().popBackStack()

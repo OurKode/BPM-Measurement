@@ -79,19 +79,18 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
         lifecycleScope.launch {
             try {
                 val response = RetrofitInstance.api.getArticles()
-                if (response.isSuccessful == true) {
+                if (response.isSuccessful) {
                     val articleResponse = response.body()
                     val articles = articleResponse?.articles ?: emptyList()
                     articleAdapter = ArticleAdapter(articles) { article ->
-                        val detailFragment = ArticleDetailFragment.newInstance(article)
-                        parentFragmentManager.beginTransaction()
-                            .replace(R.id.fragmentContainer, detailFragment)
-                            .addToBackStack(null)
-                            .commit()
+                        val bundle = Bundle().apply {
+                            putParcelable("article", article)
+                        }
+                        findNavController().navigate(R.id.action_articleFragment_to_articleDetailFragment, bundle)
                     }
                     recyclerView.adapter = articleAdapter
                 } else {
-                    val errorMessage = response?.errorBody()?.string() ?: "Unknown error"
+                    val errorMessage = response.errorBody()?.string() ?: "Unknown error"
                     Toast.makeText(context, "Failed to load articles: $errorMessage", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {

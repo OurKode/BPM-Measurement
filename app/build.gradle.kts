@@ -52,24 +52,25 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 // camera
-    implementation ("androidx.camera:camera-core:1.4.0")
-    implementation ("androidx.camera:camera-camera2:1.4.0")
-    implementation ("androidx.camera:camera-lifecycle:1.4.0")
-    implementation ("androidx.camera:camera-view:1.4.0")
+    implementation (libs.androidx.camera.core)
+    implementation (libs.androidx.camera.camera2)
+    implementation (libs.androidx.camera.lifecycle)
+    implementation (libs.androidx.camera.view)
 // bottom navigation
     implementation (libs.androidx.navigation.fragment.ktx)
     implementation (libs.androidx.navigation.ui.ktx)
+    implementation (libs.material)
 // view pager
-    implementation ("androidx.viewpager2:viewpager2:1.0.0")
-    implementation ("androidx.fragment:fragment-ktx:1.3.5")
-    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.3.1")
-    implementation ("androidx.recyclerview:recyclerview:1.2.1")
+    implementation (libs.androidx.viewpager2)
+    implementation (libs.androidx.fragment.ktx)
+    implementation (libs.androidx.lifecycle.runtime.ktx)
+    implementation (libs.androidx.recyclerview)
     // networking
     implementation (libs.retrofit)
     implementation (libs.converter.gson)
     implementation (libs.logging.interceptor)
     implementation (libs.glide)
-    annotationProcessor ("com.github.bumptech.glide:compiler:4.12.0")
+    annotationProcessor (libs.compiler)
 
     implementation (libs.material)
 

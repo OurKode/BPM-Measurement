@@ -91,15 +91,25 @@
         android:label="Result"
         tools:layout="@layout/fragment_result">
         <action
-            android:id="@+id/action_resultFragment_to_articleDetailFragment"
-            app:destination="@id/articleDetailFragment" />
-        <action
             android:id="@+id/action_resultFragment_to_introFragment"
             app:destination="@+id/introFragment"/>
+    </fragment>
+    <fragment
+        android:id="@+id/recyclerViewHealthArticles"
+        android:name="com.dicoding.heartalert2.article.ArticleFragment"
+        android:label="Article"
+        tools:layout="@layout/item_article">
+        <action
+            android:id="@+id/action_articleFragment_to_articleDetailFragment"
+            app:destination="@id/articleDetailFragment" />
     </fragment>
     <fragment
         android:id="@+id/articleDetailFragment"
         android:name="com.dicoding.heartalert2.article.ArticleDetailFragment"
         android:label="Detail Article"
-        tools:layout="@layout/fragment_article_detail"/>
+        tools:layout="@layout/fragment_article_detail">
+        <argument
+            android:name="article"
+            app:argType="com.dicoding.heartalert2.api.ArticlesItem"/>
+    </fragment>
 </navigation>
