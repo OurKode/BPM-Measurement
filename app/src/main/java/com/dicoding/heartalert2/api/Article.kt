@@ -1,4 +1,4 @@
-package com.dicoding.heartalert2.API
+package com.dicoding.heartalert2.api
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

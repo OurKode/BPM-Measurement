@@ -1,4 +1,4 @@
-package com.dicoding.heartalert2.API
+package com.dicoding.heartalert2.api
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

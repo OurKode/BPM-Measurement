@@ -3,15 +3,14 @@ package com.dicoding.heartalert2.article
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
+import android.util.Log
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import com.bumptech.glide.Glide
-import com.dicoding.heartalert2.API.Article
 import com.dicoding.heartalert2.R
+import com.dicoding.heartalert2.api.ArticlesItem
 
 class ArticleDetailFragment : Fragment(R.layout.fragment_article_detail) {
 
@@ -29,14 +28,16 @@ class ArticleDetailFragment : Fragment(R.layout.fragment_article_detail) {
         val backButton: ImageView = view.findViewById(R.id.backButton)
 
         // Get article data from arguments using getParcelableCompat method
-        val article: Article? = arguments?.getParcelableCompat("article")
+        val article: ArticlesItem? = arguments?.getParcelableCompat("article")
+        Log.d("ArticleDetailFragment", "Received article: $article")
+
         article?.let {
             titleTextView.text = it.title
             contentTextView.text = it.content
 
             // Load image using Glide
             Glide.with(this)
-                .load(it.image_url)
+                .load(it.imageUrl)
                 .into(articleImageView)
 
             backButton.setOnClickListener {
@@ -46,14 +47,6 @@ class ArticleDetailFragment : Fragment(R.layout.fragment_article_detail) {
     }
 
     companion object {
-        fun newInstance(article: Article): ArticleDetailFragment {
-            val fragment = ArticleDetailFragment()
-            val args = Bundle().apply {
-                putParcelable("article", article)
-            }
-            fragment.arguments = args
-            return fragment
-        }
     }
 
     // Helper method to handle deprecated getParcelable

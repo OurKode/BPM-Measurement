@@ -1,6 +1,7 @@
 package com.dicoding.heartalert2
 
 import android.content.Context
+import android.gesture.Prediction
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -23,6 +24,7 @@ class AppDataStore(private val context: Context) {
         val ACTIVITY_BPM_KEY = intPreferencesKey("activityBpm")
         val CHEST_TIGHTNESS_KEY = intPreferencesKey("chestTightness")
         val DATE_KEY = stringPreferencesKey("date")
+        val PREDICTION_RESULT_KEY = stringPreferencesKey("predictionResult") // Tambahkan key untuk prediksi
     }
 
     private var lastSavedUserInput: UserInput? = null // cache data terakhir
@@ -58,22 +60,32 @@ class AppDataStore(private val context: Context) {
             preferences[ACTIVITY_BPM_KEY] = activityBpm
             preferences[CHEST_TIGHTNESS_KEY] = chestTightness
             preferences[DATE_KEY] = date
-    }
+        }
         // Perbarui cache
         lastSavedUserInput = newUserInput
+    }
+
+    suspend fun savePredictionResult(prediction: Double) {
+        context.dataStore.edit { preferences ->
+            preferences[PREDICTION_RESULT_KEY] = prediction.toString()
         }
+    }
 
     val userInputFlow: Flow<UserInput> = context.dataStore.data
         .map { preferences ->
             UserInput(
                 gender = preferences[GENDER_KEY] ?: -1,
-                age = preferences[AGE_KEY] ?: 0,
+                age = preferences[AGE_KEY] ?: 16,
                 chestPainLevel = preferences[CHEST_PAIN_LEVEL_KEY] ?: -1,
                 restingBpm = preferences[RESTING_BPM_KEY] ?: -1,
                 activityBpm = preferences[ACTIVITY_BPM_KEY] ?: -1,
                 chestTightness = preferences[CHEST_TIGHTNESS_KEY] ?: -1,
                 date = preferences[DATE_KEY] ?: ""
             )
+        }
+    val predictionResultFlow: Flow<Double> = context.dataStore.data
+        .map { preferences ->
+            preferences[PREDICTION_RESULT_KEY]?.toDoubleOrNull() ?: 0.0
         }
 }
 

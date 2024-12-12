@@ -28,14 +28,15 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
         appDataStore = AppDataStore(requireContext())
 
         val resultTextView: TextView = view.findViewById(R.id.resultTextView)
-        val recommendationTextView: TextView = view.findViewById(R.id.recommendationTextView)
+        val predictionTextView: TextView = view.findViewById(R.id.predictionTextView)
         val remeasureButton: Button = view.findViewById(R.id.btn_remeasure)
+
         recyclerView = view.findViewById(R.id.recyclerViewHealthArticles)
         recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         articleAdapter = ArticleAdapter(emptyList()) { }
         recyclerView.adapter = articleAdapter
 
-        loadResults(resultTextView, recommendationTextView)
+        loadResults(resultTextView, predictionTextView)
 
         remeasureButton.setOnClickListener {
             resetDataStore()
@@ -49,31 +50,34 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
         findNavController().navigate(R.id.action_resultFragment_to_introFragment)
     }
 
-    private fun loadResults(resultTextView: TextView, recommendationTextView: TextView) {
+    private fun loadResults(resultTextView: TextView, predictionTextView: TextView) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appDataStore.userInputFlow.collect { userInput ->
-                    val result = """
-                    Gender: ${if (userInput.gender == 1) "Laki-laki" else if (userInput.gender == 0) "Perempuan" else "Tidak Diketahui"}
-                    Age: ${userInput.age}
-                    Chest Pain Level: ${userInput.chestPainLevel}
-                    Resting BPM: ${userInput.restingBpm}
-                    Activity BPM: ${userInput.activityBpm}
-                    Chest Tightness: ${userInput.chestTightness}
-                    Date: ${userInput.date}
-                """.trimIndent()
+                launch {
+                    appDataStore.userInputFlow.collect { userInput ->
+                        val result = """
+                        Gender: ${if (userInput.gender == 1) "Laki-laki" else if (userInput.gender == 0) "Perempuan" else "Tidak Diketahui"}
+                        Age: ${userInput.age}
+                        Chest Pain Level: ${userInput.chestPainLevel}
+                        Resting BPM: ${userInput.restingBpm}
+                        Activity BPM: ${userInput.activityBpm}
+                        Chest Tightness: ${userInput.chestTightness}
+                        Date: ${userInput.date}
+                    """.trimIndent()
 
-                    resultTextView.text = result
+                        resultTextView.text = result
+                    }
+                }
 
-                    recommendationTextView.text = if (userInput.chestPainLevel >= 2 || userInput.restingBpm > 100 || userInput.activityBpm > 150) {
-                        "Recommendation: Visit the nearest hospital."
-                    } else {
-                        "Recommendation: Maintain a healthy lifestyle."
+                launch {
+                    appDataStore.predictionResultFlow.collect { prediction ->
+                        predictionTextView.text = "Prediction: ${String.format("%.2f", prediction)}"
                     }
                 }
             }
         }
     }
+
 
     private fun fetchArticles() {
         lifecycleScope.launch {
