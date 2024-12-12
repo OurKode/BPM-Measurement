@@ -17,7 +17,9 @@ import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.dicoding.heartalert2.AppDataStore
 import com.dicoding.heartalert2.MainActivity
 import com.dicoding.heartalert2.SharedPreferencesHelper
 import java.nio.ByteBuffer
@@ -25,18 +27,20 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 import com.dicoding.heartalert2.R
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
-    private lateinit var cameraPreview: Preview
     private lateinit var startStopButton: Button
     private lateinit var bpmTextView: TextView
     private lateinit var previewView: PreviewView
     private lateinit var timerTextView: TextView
     private lateinit var nextButton: Button
-    private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
+    private lateinit var backButton: Button
+    private lateinit var appDataStore: AppDataStore
 
     private var isMonitoring = false
     private var sampleBuffer = mutableListOf<Pair<Long, Double>>()
@@ -48,20 +52,29 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        sharedPreferencesHelper = SharedPreferencesHelper(requireContext())
+        appDataStore = AppDataStore(requireContext())
+
         startStopButton = view.findViewById(R.id.start_stop_button)
         bpmTextView = view.findViewById(R.id.bpm_text)
         previewView = view.findViewById(R.id.preview_view)
         timerTextView = view.findViewById(R.id.timer_text)
         nextButton = view.findViewById(R.id.btn_next)
+        backButton = view.findViewById(R.id.btn_back)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
         startStopButton.setOnClickListener { toggleMonitoring() }
 
         view.findViewById<Button>(R.id.btn_back).setOnClickListener {
-            stopMonitoring() // Menghentikan Pengukuran
+            stopMonitoring(saveResult = true) // Hentikan pengukuran
             (activity as MainActivity).moveToPreviousPage()
+//            val chestPainQuestionAnswer = sharedPreferencesHelper.getInt("chestPainLevel", -1)
+//            if (chestPainQuestionAnswer == 0) {
+//            // Jika pengguna memilih 'no' pada chest pain question
+//                (activity as MainActivity).moveToPage(3)
+//            } else {
+//                (activity as MainActivity).moveToPage(4)
+//            }
         }
 
         // Disable next button initially
@@ -86,7 +99,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
 
     private fun toggleMonitoring() {
         if (isMonitoring) {
-            stopMonitoring(saveResult = false)
+            stopMonitoring(saveResult = true)
         } else {
             startMonitoring()
         }
@@ -94,11 +107,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
 
     private fun startMonitoring() {
         if (!permissionsGranted()) {
-            Toast.makeText(
-                requireContext(),
-                "Izin kamera diperlukan untuk melanjutkan",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(requireContext(), "Izin kamera diperlukan untuk melanjutkan", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -113,10 +122,10 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
             val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
+                it.surfaceProvider = previewView.surfaceProvider
             }
 
-            val imageAnalyzer = ImageAnalysis.Builder().build().also {
+            val imageAnalyzer = ImageAnalysis.Builder().build(). also {
                 it.setAnalyzer(cameraExecutor) { image ->
                     val brightness = averageBrightness(image)
                     val timestamp = System.currentTimeMillis()
@@ -175,7 +184,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         startStopButton.postDelayed(updateBpmRunnable, 1500)
     }
 
-    private fun stopMonitoring(saveResult: Boolean = false) {
+    private fun stopMonitoring(saveResult: Boolean) {
         isMonitoring = false
         camera?.cameraControl?.enableTorch(false)
         camera?.let {
@@ -191,9 +200,19 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
             val dataStats = analyzeData(sampleBuffer)
             val finalBpm = calculateBpm(dataStats.crossings)
             finalBpm?.let {
-                bpmTextView.text = "Activity BPM: ${it.roundToInt()} BPM"
-                saveBpm(finalBpm.roundToInt())
-                Toast.makeText(requireContext(), "Activity BPM berhasil disimpan:(${it.roundToInt()}", Toast.LENGTH_SHORT).show()
+                val roundedBpm = it.roundToInt()
+                if (roundedBpm in 40..200) { // Rentang valid BPM
+                    bpmTextView.text = "Detak Jantung Anda: $roundedBpm BPM"
+                    saveBpm(roundedBpm)
+                    Toast.makeText(requireContext(), "Activity BPM berhasil disimpan: $roundedBpm", Toast.LENGTH_SHORT).show()
+                } else {
+                    bpmTextView.text = "Pengukuran tidak valid. Coba lagi."
+                    Toast.makeText(requireContext(), "Nilai BPM tidak valid. Pastikan jari Anda stabil.", Toast.LENGTH_SHORT).show()
+                }
+            } ?: run{
+                bpmTextView.text = "Gagal menghitung BPM. Coba lagi."
+                // Handdle case where BPM calculation fails
+                Log.d("ActivityBpmFragment", "BPM calculation failed")
             }
             nextButton.isEnabled = true
         }
@@ -228,7 +247,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
     }
 
     private fun startSampling() {
-//        Toast.makeText(requireContext(), "Memulai Pengukuran...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), "Memulai Pengukuran...", Toast.LENGTH_SHORT).show()
     }
 
     private val updateBpmRunnable = object : Runnable {
@@ -248,8 +267,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
     private fun calculateBpm(crossings: List<Long>): Double? {
         if (crossings.size < 2) return null
 
-        val averageInterval =
-            (crossings.last() - crossings.first()).toDouble() / (crossings.size - 1)
+        val averageInterval = (crossings.last() - crossings.first()).toDouble() / (crossings.size - 1)
         return 60000 / averageInterval
     }
 
@@ -263,10 +281,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         return DataStats(average, min, max, range, crossings)
     }
 
-    private fun getAverageCrossings(
-        samples: List<Pair<Long, Double>>,
-        average: Double
-    ): List<Long> {
+    private fun getAverageCrossings(samples: List<Pair<Long, Double>>, average: Double): List<Long> {
         val crossingsSamples = mutableListOf<Long>()
         var previousSample = samples[0]
 
@@ -308,11 +323,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (!permissionsGranted()) {
-                Toast.makeText(
-                    requireContext(),
-                    "Izin kamera diperlukan untuk melanjutkan",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Izin kamera diperlukan untuk melanjutkan", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -323,18 +334,29 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
     }
 
     private fun saveBpm(bpm: Int) {
-        val sharedPref =
-            requireActivity().getSharedPreferences("HeartAlertPrefs", Context.MODE_PRIVATE)
-        val editor = sharedPref.edit()
-        // get current date
-        val currentTime = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
-//        val uniqueId = System.currentTimeMillis().toString()
+        if (bpm > 0) {
+            Log.d("ActivityBpmFragment", "Saving BPM: $bpm")
 
-        // use consistent keys for storing activityBpm
-        editor.putInt("activityBpm", bpm)
-//        editor.putString("timestamp", currentTime)
-        editor.apply()
+            lifecycleScope.launch {
+                val currentInput = appDataStore.userInputFlow.first()
+                appDataStore.saveUserInput(
+                    gender = currentInput.gender,
+                    age = currentInput.age,
+                    chestPainLevel = currentInput.chestPainLevel,
+                    restingBpm = currentInput.restingBpm,
+                    activityBpm = bpm,
+                    chestTightness = currentInput.chestTightness,
+                    date = currentInput.date
+                )
+            }
+
+
+        } else {
+            Log.d("ActivityBpmFragment", "Invalid BPM value, not saving")
+            Toast.makeText(requireContext(), "Nilai BPM tidak Valid", Toast.LENGTH_SHORT).show()
+        }
     }
+
 
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10

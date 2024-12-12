@@ -67,12 +67,12 @@ dependencies {
     implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.3.1")
     implementation ("androidx.recyclerview:recyclerview:1.2.1")
     // networking
-    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation ("com.squareup.okhttp3:logging-interceptor:4.10.0")
-    implementation ("com.github.bumptech.glide:glide:4.15.1")
+    implementation (libs.retrofit)
+    implementation (libs.converter.gson)
+    implementation (libs.logging.interceptor)
+    implementation (libs.glide)
 
-    implementation ("com.google.android.material:material:1.4.0")
+    implementation (libs.material)
 
-    implementation ("androidx.datastore:datastore-preferences:1.1.1")
+    implementation (libs.androidx.datastore.preferences)
 }

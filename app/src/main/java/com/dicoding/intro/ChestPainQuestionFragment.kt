@@ -48,6 +48,12 @@ class ChestPainQuestionFragment : Fragment(R.layout.fragment_chest_pain_question
                     )
                 }
             }
+            if (radioGroup.checkedRadioButtonId == R.id.radio_no) {
+            // Langsung ke RestingBpmFragment
+            (activity as MainActivity).moveToPage(5) // 5 adalah posisi RestingBpmFragment
+            } else {
+                (activity as MainActivity).moveToNextPage()
+            }
         }
 
         backButton.setOnClickListener {

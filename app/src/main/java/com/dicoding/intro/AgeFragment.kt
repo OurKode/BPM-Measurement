@@ -26,6 +26,11 @@ class AgeFragment : Fragment(R.layout.fragment_age) {
         nextButton = view.findViewById(R.id.btn_next)
         backButton = view.findViewById(R.id.btn_back)
 
+        nextButton.isEnabled = false
+        numberPicker.setOnValueChangedListener { _, _, _ ->
+            nextButton.isEnabled = true
+        }
+        // Set the range for the NumberPicker
         numberPicker.minValue = 16
         numberPicker.maxValue = 111
         numberPicker.wrapSelectorWheel = false
@@ -53,10 +58,9 @@ class AgeFragment : Fragment(R.layout.fragment_age) {
                         date = userInput.date
                     )
                 }
-
-                Toast.makeText(requireContext(), "Data umur berhasil disimpan: $age", Toast.LENGTH_SHORT).show()
-                (activity as MainActivity).moveToNextPage()
             }
+            Toast.makeText(requireContext(), "Data umur berhasil disimpan: $age", Toast.LENGTH_SHORT).show()
+            (activity as MainActivity).moveToNextPage()
         }
 
         backButton.setOnClickListener {

@@ -7,20 +7,24 @@ import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
+import com.dicoding.heartalert2.AppDataStore
 import com.dicoding.heartalert2.MainActivity
 import com.dicoding.heartalert2.R
 import com.dicoding.heartalert2.SharedPreferencesHelper
 
 import com.google.android.material.slider.Slider
+import kotlinx.coroutines.launch
 
 class ChestPainSliderFragment : Fragment(R.layout.fragment_chest_pain_slider) {
-    private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
+    private lateinit var appDataStore: AppDataStore
+
     private lateinit var nextButton: Button
     private lateinit var slider: Slider
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        sharedPreferencesHelper = SharedPreferencesHelper(requireContext())
+        appDataStore = AppDataStore(requireContext())
 
         view.findViewById<Button>(R.id.btn_back).setOnClickListener {
             (activity as MainActivity).moveToPreviousPage()
@@ -39,12 +43,20 @@ class ChestPainSliderFragment : Fragment(R.layout.fragment_chest_pain_slider) {
 
         nextButton.setOnClickListener {
             val chestPainLevel = slider.value.toInt() // 1 to 3
-            sharedPreferencesHelper.saveInt("chestPainLevel", chestPainLevel)
-            Toast.makeText(
-                requireContext(),
-                "Tingkat nyeri dada berhasil disimpan: ($chestPainLevel)",
-                Toast.LENGTH_SHORT
-            ).show()
+            // Save chest pain level to DataStore
+            lifecycleScope.launch {
+                appDataStore.userInputFlow.collect { userInput ->
+                    appDataStore.saveUserInput(
+                        gender = userInput.gender,
+                        age = userInput.age,
+                        chestPainLevel = chestPainLevel,
+                        restingBpm = userInput.restingBpm,
+                        activityBpm = userInput.activityBpm,
+                        chestTightness = userInput.chestTightness,
+                        date = userInput.date
+                    )
+                }
+            }
             (activity as MainActivity).moveToNextPage()
         }
     }

@@ -16,6 +16,8 @@ import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.dicoding.heartalert2.AppDataStore
 import com.dicoding.heartalert2.MainActivity
 import com.dicoding.heartalert2.SharedPreferencesHelper
 import java.nio.ByteBuffer
@@ -23,6 +25,9 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 import com.dicoding.heartalert2.R
+import com.dicoding.heartalert2.UserInput
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
     private lateinit var startStopButton: Button
@@ -30,7 +35,8 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
     private lateinit var previewView: PreviewView
     private lateinit var timerTextView: TextView
     private lateinit var nextButton: Button
-    private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
+    private lateinit var backButton: Button
+    private lateinit var appDataStore: AppDataStore
 
     private var isMonitoring = false
     private var sampleBuffer = mutableListOf<Pair<Long, Double>>()
@@ -42,13 +48,14 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        sharedPreferencesHelper = SharedPreferencesHelper(requireContext())
+        appDataStore = AppDataStore(requireContext())
 
         startStopButton = view.findViewById(R.id.start_stop_button)
         bpmTextView = view.findViewById(R.id.bpm_text)
         previewView = view.findViewById(R.id.preview_view)
         timerTextView = view.findViewById(R.id.timer_text)
         nextButton = view.findViewById(R.id.btn_next)
+        backButton = view.findViewById(R.id.btn_back)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -56,13 +63,14 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
 
         view.findViewById<Button>(R.id.btn_back).setOnClickListener {
             stopMonitoring(saveResult = true) // Hentikan pengukuran
-            val chestPainQuestionAnswer = sharedPreferencesHelper.getInt("chestPainLevel", -1)
-            if (chestPainQuestionAnswer == 0) {
-            // Jika pengguna memilih 'no' pada chest pain question
-                (activity as MainActivity).moveToPage(3)
-            } else {
-                (activity as MainActivity).moveToPage(4)
-            }
+            (activity as MainActivity).moveToPreviousPage()
+//            val chestPainQuestionAnswer = sharedPreferencesHelper.getInt("chestPainLevel", -1)
+//            if (chestPainQuestionAnswer == 0) {
+//            // Jika pengguna memilih 'no' pada chest pain question
+//                (activity as MainActivity).moveToPage(3)
+//            } else {
+//                (activity as MainActivity).moveToPage(4)
+//            }
         }
 
         // Disable next button initially
@@ -322,19 +330,29 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
     }
 
     private fun saveBpm(bpm: Int) {
-        val sharedPref = requireActivity().getSharedPreferences("HeartAlertPrefs", Context.MODE_PRIVATE)
-        val editor = sharedPref.edit()
-        // get current date
-//        val currentTime = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
         if (bpm > 0) {
             Log.d("RestingBpmFragment", "Saving BPM: $bpm")
-            editor.putInt("restingBpm", bpm)
-            editor.apply()
-    } else {
-        Log.d("RestingBpmFragment", "Invalid BPM value, not saving")
+
+            lifecycleScope.launch {
+                val currentInput = appDataStore.userInputFlow.first()
+                appDataStore.saveUserInput(
+                        gender = currentInput.gender,
+                        age = currentInput.age,
+                        chestPainLevel = currentInput.chestPainLevel,
+                        restingBpm = bpm,
+                        activityBpm = currentInput.activityBpm,
+                        chestTightness = currentInput.chestTightness,
+                        date = currentInput.date
+                )
+            }
+
+
+        } else {
+            Log.d("RestingBpmFragment", "Invalid BPM value, not saving")
             Toast.makeText(requireContext(), "Nilai BPM tidak Valid", Toast.LENGTH_SHORT).show()
         }
     }
+
 
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10

@@ -62,13 +62,12 @@ class ChestTightnessFragment : Fragment(R.layout.fragment_chest_tightness) {
                         date = currentDate
                     )
                 }
-
-                Toast.makeText(requireContext(), "Semua data berhasil disimpan", Toast.LENGTH_SHORT).show()
-
-                Handler(Looper.getMainLooper()).postDelayed({
-                    (activity as MainActivity).moveToNextPage()
-                }, 1000) // 1 second delay
             }
+            Toast.makeText(requireContext(), "Semua data berhasil disimpan", Toast.LENGTH_SHORT).show()
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                (activity as MainActivity).moveToNextPage()
+            }, 1000) // 1 second delay
         }
     }
 }

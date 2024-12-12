@@ -9,12 +9,10 @@ import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.dicoding.heartalert2.API.RetrofitInstance
+import com.dicoding.heartalert2.api.RetrofitInstance
 import com.dicoding.heartalert2.adapter.ArticleAdapter
 import com.dicoding.heartalert2.article.ArticleDetailFragment
 import kotlinx.coroutines.launch
-import org.json.JSONException
-import org.json.JSONObject
 
 class ResultFragment : Fragment(R.layout.fragment_result) {
     private lateinit var recyclerView: RecyclerView

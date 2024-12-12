@@ -26,16 +26,9 @@ class ViewPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapte
         ResultFragment()
     )
 
-//    override fun getItemCount(): Int = fragmentList.size + 1
-
     override fun getItemCount(): Int = fragmentList.size
 
     override fun createFragment(position: Int): Fragment {
         return fragmentList[position]
-//        return if (position < fragmentList.size) {
-//            fragmentList[position]
-//        } else {
-//            ResultFragment() // Pastikan ini hanya diakses di akhir.
-//        }
     }
 }
