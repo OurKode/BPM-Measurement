@@ -2,40 +2,46 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:padding="16dp">
 
     <TextView
-        android:id="@+id/resultTextView"
+        android:id="@+id/activityBpmTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Result"
-        android:textSize="18sp"
-        android:layout_marginBottom="8dp"/>
+        android:text="BPM: "
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"
+        android:textSize="26sp" />
 
     <TextView
-        android:id="@+id/recommendationTextView"
+        android:id="@+id/riskStatusTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Recommendation"
-        android:textSize="16sp"/>
+        android:text="result"
+        android:textSize="21sp"
+        android:layout_marginBottom="21dp"/>
 
     <!-- Update button text to "Mengukur Ulang" -->
     <Button
         android:id="@+id/btn_remeasure"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Mengukur Ulang"
-        android:layout_marginTop="16dp"/>
+        android:backgroundTint="@color/orange"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:padding="14dp"
+        android:gravity="center"
+        android:layout_marginTop="21dp"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewHealthArticles"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:scrollbars="horizontal"
-        app:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager" />
+        android:layout_marginTop="21dp"
+        android:backgroundTint="@color/orange_transparent"
+        android:scrollbars="horizontal"/>
 
 </LinearLayout>

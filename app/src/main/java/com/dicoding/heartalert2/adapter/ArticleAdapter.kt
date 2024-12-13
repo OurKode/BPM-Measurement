@@ -1,29 +1,37 @@
 package com.dicoding.heartalert2.adapter
 
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.dicoding.heartalert2.R
 import com.dicoding.heartalert2.api.ArticlesItem
 import com.dicoding.heartalert2.databinding.ItemArticleBinding
 
 
 class ArticleAdapter(
-    private var articles: List<ArticlesItem>,
-    private val onItemClick: (ArticlesItem) -> Unit
+    private var articles: List<ArticlesItem>
 ) : RecyclerView.Adapter<ArticleAdapter.ArticleViewHolder>() {
 
     inner class ArticleViewHolder(private val binding: ItemArticleBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(article: ArticlesItem) {
+            // Setting up the title, date, and description text
             binding.tvTitle.text = article.title
-            binding.tvDate.text = article.createdAt.substring(0, 10)
-            binding.tvDescription.text = article.content.take(100) + "..."
 
+            // Load image using Glide into ImageView
+            Glide.with(binding.root.context)
+                .load(article.imageUrl)
+                .placeholder(R.drawable.placeholder_image) // Placeholder saat loading
+                .into(binding.articleImageView)
+
+            // Handle click events inside the adapter itself
             itemView.setOnClickListener {
-                onItemClick(article)
+                val context = binding.root.context
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(article.referenceLink))
+                context.startActivity(intent)
             }
         }
     }
@@ -35,9 +43,7 @@ class ArticleAdapter(
 
     override fun onBindViewHolder(holder: ArticleViewHolder, position: Int) {
         val article = articles[position]
-        if (article != null) {
-            holder.bind(article)
-        }
+        holder.bind(article)
     }
 
     override fun getItemCount(): Int = articles.size
