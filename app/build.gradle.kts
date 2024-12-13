@@ -81,5 +81,7 @@ dependencies {
 
     implementation (libs.tensorflow.lite.support)
     implementation ("org.tensorflow:tensorflow-lite:2.13.0")
+    implementation ("com.google.android.gms:play-services-location:18.0.0")
+    implementation ("androidx.activity:activity-ktx:1.6.0")
 
 }

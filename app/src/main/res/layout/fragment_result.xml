@@ -44,4 +44,13 @@
         android:backgroundTint="@color/orange_transparent"
         android:scrollbars="horizontal"/>
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewHospital"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="21dp"
+        android:backgroundTint="@color/orange_transparent"
+        android:scrollbars="horizontal"/>
+
 </LinearLayout>
