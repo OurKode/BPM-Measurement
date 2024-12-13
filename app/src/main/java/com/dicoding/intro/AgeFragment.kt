@@ -46,7 +46,7 @@ class AgeFragment : Fragment(R.layout.fragment_age) {
         }
 
         nextButton.setOnClickListener {
-            Log.d("AgeFragment", "Next button clicked")
+//            Log.d("AgeFragment", "Next button clicked")
             val age = numberPicker.value
             // Save the age to DataStore
             lifecycleScope.launch {
@@ -61,7 +61,7 @@ class AgeFragment : Fragment(R.layout.fragment_age) {
                     date = userInput.date
                 )
             }
-            Toast.makeText(requireContext(), "Data umur berhasil disimpan: $age", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(requireContext(), "Data umur berhasil disimpan: $age", Toast.LENGTH_SHORT).show()
             findNavController().navigate(R.id.action_ageFragment_to_chestPainQuestionFragment)
         }
         backButton.setOnClickListener {

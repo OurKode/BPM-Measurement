@@ -79,7 +79,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
             if (!isMonitoring) {
                 findNavController().navigate(R.id.action_restingBpmFragment_to_activityBpmFragment)
             } else {
-                Toast.makeText(requireContext(), "Selesaikan pengukuran terlebih dahulu", Toast.LENGTH_SHORT).show()
+//                Toast.makeText(requireContext(), "Selesaikan pengukuran terlebih dahulu", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -137,11 +137,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
                                 resetData()
                                 val currentTime = System.currentTimeMillis()
                                 if (currentTime - lastToastTime > 5000) { // 5 seconds delay between toasts
-                                    Toast.makeText(
-                                        requireContext(),
-                                        "Pastikan jari anda menutupi kamera.",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast.makeText(requireContext(),"Pastikan jari anda menutupi kamera.",Toast.LENGTH_SHORT).show()
                                     lastToastTime = currentTime
                                 }
                             }
@@ -201,12 +197,12 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
             finalBpm?.let {
                 val roundedBpm = it.roundToInt()
                 if (roundedBpm in 40..200) { // Rentang valid BPM
-                    bpmTextView.text = "Detak Jantung Anda: $roundedBpm BPM"
+                    bpmTextView.text = "Hasil: $roundedBpm BPM"
                     saveBpm(roundedBpm)
-                    Toast.makeText(requireContext(), "Resting BPM berhasil disimpan: $roundedBpm", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(requireContext(), "Resting BPM berhasil disimpan: $roundedBpm", Toast.LENGTH_SHORT).show()
                 } else {
                     bpmTextView.text = "Pengukuran tidak valid. Coba lagi."
-                    Toast.makeText(requireContext(), "Nilai BPM tidak valid. Pastikan jari Anda stabil.", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(requireContext(), "Nilai BPM tidak valid. Pastikan jari Anda stabil.", Toast.LENGTH_SHORT).show()
                 }
             } ?: run{
                 bpmTextView.text = "Gagal menghitung BPM. Coba lagi."
@@ -230,7 +226,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         timer = object : CountDownTimer(13000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val secondsRemaining = millisUntilFinished / 1000
-                timerTextView.text = "Waktu Tersisa: $secondsRemaining detik"
+                timerTextView.text = "Timer: $secondsRemaining detik"
             }
 
             override fun onFinish() {
@@ -246,7 +242,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
     }
 
     private fun startSampling() {
-        Toast.makeText(requireContext(), "Memulai Pengukuran...", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(requireContext(), "Memulai Pengukuran...", Toast.LENGTH_SHORT).show()
     }
 
     private val updateBpmRunnable = object : Runnable {
@@ -373,7 +369,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
 
         } else {
             Log.d("RestingBpmFragment", "Invalid BPM value, not saving")
-            Toast.makeText(requireContext(), "Nilai BPM tidak Valid", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(requireContext(), "Nilai BPM tidak Valid", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -55,7 +55,7 @@ class IntroFragment : Fragment(R.layout.fragment_intro) {
                         val riskStatus = if (displayPrediction >= 0.5) "Beresiko!" else "Normal"
 
                         // Displaying the result in TextView
-                        lastResultTextView.text = "Activity BPM: $activityBpm\nPrediksi: $riskStatus"
+                        lastResultTextView.text = "$activityBpm BPM\nPrediksi: $riskStatus"
 
                         // Display the CardView if there is history
                         lastResultCardView.visibility = View.VISIBLE

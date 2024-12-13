@@ -1,7 +1,6 @@
 <resources>
-    <string name="app_name">Heart Rate Measurement</string>
+    <string name="app_name">Heart Alert</string>
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="back_button_desc">Ikon kembali</string>
     <string name="article_image_desc">Gambar dari artikel terkait</string>
     <string name="male">Laki-laki</string>
@@ -22,4 +21,5 @@
     <string name="intro4">Jika terdapat tanda-tanda serius pada tubuh anda, jangan menunda untuk mengunjungi dokter.</string>
     <string name="welcom">Hi, Selamat Datang!</string>
     <string name="start">Mulai</string>
+    <string name="modelMl">https://model-service-218244789825.asia-southeast2.run.app/predict</string>
 </resources>

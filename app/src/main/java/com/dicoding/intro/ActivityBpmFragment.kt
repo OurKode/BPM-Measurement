@@ -204,15 +204,15 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
             finalBpm?.let {
                 val roundedBpm = it.roundToInt()
                 if (roundedBpm in 40..200) { // Rentang valid BPM
-                    bpmTextView.text = "Detak Jantung Anda: $roundedBpm BPM"
+                    bpmTextView.text = "Hasil : $roundedBpm BPM"
                     saveBpm(roundedBpm)
-                    Toast.makeText(requireContext(), "Activity BPM berhasil disimpan: $roundedBpm", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(requireContext(), "Activity BPM berhasil disimpan: $roundedBpm", Toast.LENGTH_SHORT).show()
                 } else {
                     bpmTextView.text = "Pengukuran tidak valid. Coba lagi."
-                    Toast.makeText(requireContext(), "Nilai BPM tidak valid. Pastikan jari Anda stabil.", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(requireContext(), "Nilai BPM tidak valid. Pastikan jari Anda stabil.", Toast.LENGTH_SHORT).show()
                 }
             } ?: run{
-                bpmTextView.text = "Gagal menghitung BPM. Coba lagi."
+                bpmTextView.text = "Gagal menghitung. Coba lagi."
                 // Handdle case where BPM calculation fails
                 Log.d("ActivityBpmFragment", "BPM calculation failed")
             }
@@ -233,7 +233,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         timer = object : CountDownTimer(13000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val secondsRemaining = millisUntilFinished / 1000
-                timerTextView.text = "Waktu Tersisa: $secondsRemaining detik"
+                timerTextView.text = "Timer: $secondsRemaining detik"
             }
 
             override fun onFinish() {
@@ -249,7 +249,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
     }
 
     private fun startSampling() {
-        Toast.makeText(requireContext(), "Memulai Pengukuran...", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(requireContext(), "Memulai Pengukuran...", Toast.LENGTH_SHORT).show()
     }
 
     private val updateBpmRunnable = object : Runnable {
@@ -376,7 +376,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
 
         } else {
             Log.d("ActivityBpmFragment", "Invalid BPM value, not saving")
-            Toast.makeText(requireContext(), "Nilai BPM tidak Valid", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(requireContext(), "Nilai BPM tidak Valid", Toast.LENGTH_SHORT).show()
         }
     }
 

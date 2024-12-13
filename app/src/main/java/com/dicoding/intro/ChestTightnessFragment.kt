@@ -110,7 +110,7 @@ class ChestTightnessFragment : Fragment(R.layout.fragment_chest_tightness) {
                 appDataStore.savePredictionResult(prediction)
                 findNavController().navigate(R.id.action_chestTightnessFragment_to_resultFragment)
             } else {
-                Toast.makeText(requireContext(), "Gagal memproses prediksi", Toast.LENGTH_SHORT).show()
+//                Toast.makeText(requireContext(), "Gagal memproses prediksi", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -131,7 +131,7 @@ class ChestTightnessFragment : Fragment(R.layout.fragment_chest_tightness) {
     }
 
     private suspend fun sendPredictionRequest(input: List<Int>): Double? {
-        val url = "https://model-service-218244789825.asia-southeast2.run.app/predict"
+        val url = getString(R.string.modelMl)
         val jsonBody = JSONObject().apply { put("input", JSONArray(input)) }
 
         return withContext(Dispatchers.IO) {

@@ -39,7 +39,6 @@ class GenderFragment : Fragment(R.layout.fragment_gender) {
             selectGenderAndNavigate(0)
         }
 
-        // Tombol Next tidak digunakan lagi, jadi kita hapus logika terkait
         backButton.setOnClickListener {
             findNavController().popBackStack()
         }

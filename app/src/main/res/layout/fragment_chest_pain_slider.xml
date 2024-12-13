@@ -19,21 +19,21 @@
         android:id="@+id/slider_chest_pain"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="21dp"
         android:layout_marginTop="21dp"
+        android:layout_marginEnd="21dp"
+        android:layout_marginBottom="21dp"
         android:stepSize="1"
         android:valueFrom="1"
         android:valueTo="3"
         app:labelBehavior="visible"
-        app:thumbWidth="8dp"
         app:thumbColor="@color/orange"
-        app:trackColor="@color/orange_transparent"
+        app:thumbWidth="8dp"
         app:tickColor="@color/orange"
-        app:trackColorActive="@color/orange_transparent"
         app:tickColorActive="@color/orange_transparent"
-        tools:ignore="SpeakableTextPresentCheck"
-        android:layout_marginBottom="21dp"
-        android:layout_marginStart="21dp"
-        android:layout_marginEnd="21dp"/>
+        app:trackColor="@color/orange_transparent"
+        app:trackColorActive="@color/orange"
+        tools:ignore="SpeakableTextPresentCheck" />
 
     <GridLayout
         android:layout_width="match_parent"
@@ -60,7 +60,7 @@
             android:layout_height="wrap_content"
             android:text="@string/next"
             android:backgroundTint="@color/orange"
-            android:textColor="@color/black"
+            android:textColor="@color/white"
             android:textSize="16sp"
             android:padding="14dp"
             android:layout_marginStart="16dp" />
