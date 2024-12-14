@@ -20,6 +20,7 @@ import com.dicoding.heartalert2.adapter.ArticleAdapter
 import com.dicoding.heartalert2.adapter.HospitalAdapter
 import com.dicoding.heartalert2.api.ArticlesItem
 import com.dicoding.heartalert2.api.RetrofitInstance
+import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
@@ -118,6 +119,11 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
     }
 
     private fun loadArticles() {
+        val shimmerLayoutArticles: ShimmerFrameLayout = view?.findViewById(R.id.shimmerLayoutArticle)!!
+        shimmerLayoutArticles.startShimmer() // Mulai animasi shimmer
+        shimmerLayoutArticles.visibility = View.VISIBLE
+        recyclerViewArticles.visibility = View.GONE
+
         lifecycleScope.launch {
             try {
                 val response = RetrofitInstance.api.getArticles()
@@ -129,6 +135,11 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
                 }
             } catch (e: Exception) {
                 Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }finally {
+                // Hentikan shimmer dan tampilkan RecyclerView
+                shimmerLayoutArticles.stopShimmer()
+                shimmerLayoutArticles.visibility = View.GONE
+                recyclerViewArticles.visibility = View.VISIBLE
             }
         }
     }
@@ -167,6 +178,11 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
     }
 
     private fun fetchHospitals(latitude: Double, longitude: Double) {
+        val shimmerLayoutHospitals: ShimmerFrameLayout = view?.findViewById(R.id.shimmerLayoutHospitals)!!
+        shimmerLayoutHospitals.startShimmer() // Mulai animasi shimmer
+        shimmerLayoutHospitals.visibility = View.VISIBLE
+        recyclerViewHospitals.visibility = View.GONE
+
         val locationRequest = LocationRequest(latitude, longitude)
 
         Log.d("DEBUG", "LocationRequest: Latitude = $latitude, Longitude = $longitude")
@@ -182,6 +198,11 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
                 }
             } catch (e: Exception) {
                 Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                // Hentikan shimmer dan tampilkan RecyclerView
+                shimmerLayoutHospitals.stopShimmer()
+                shimmerLayoutHospitals.visibility = View.GONE
+                recyclerViewHospitals.visibility = View.VISIBLE
             }
         }
     }

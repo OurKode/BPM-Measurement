@@ -80,8 +80,10 @@ dependencies {
     implementation (libs.androidx.datastore.preferences)
 
     implementation (libs.tensorflow.lite.support)
-    implementation ("org.tensorflow:tensorflow-lite:2.13.0")
-    implementation ("com.google.android.gms:play-services-location:18.0.0")
-    implementation ("androidx.activity:activity-ktx:1.6.0")
+    implementation (libs.tensorflow.lite)
+    implementation (libs.play.services.location)
+    implementation (libs.activity.ktx)
+    implementation (libs.shimmer)
+
 
 }

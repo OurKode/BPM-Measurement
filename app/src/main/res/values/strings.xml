@@ -22,4 +22,9 @@
     <string name="welcom">Hi, Selamat Datang!</string>
     <string name="start">Mulai</string>
     <string name="modelMl">https://model-service-218244789825.asia-southeast2.run.app/predict</string>
+    <string name="inputManualBpm">Masukkan Nilai Manual</string>
+    <string name="measure">Mengukur...</string>
+    <string name="stop">Berhenti</string>
+    <string name="failedMeasure">Gagal menghitung. Coba lagi.</string>
+    <string name="notValidMeasure">Pengukuran tidak valid. Coba lagi.</string>
 </resources>
