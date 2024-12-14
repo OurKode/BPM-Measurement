@@ -2,12 +2,15 @@ package com.dicoding.heartalert2
 
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Looper
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import android.Manifest
+import com.google.android.gms.location.LocationRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -22,7 +25,10 @@ import com.dicoding.heartalert2.api.ArticlesItem
 import com.dicoding.heartalert2.api.RetrofitInstance
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -36,12 +42,28 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
     private lateinit var recyclerViewHospitals: RecyclerView
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var shimmerLayoutArticles: ShimmerFrameLayout
+    private lateinit var shimmerLayoutHospitals: ShimmerFrameLayout
+
+    private val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+        .setMinUpdateIntervalMillis(2000) // Interval tercepat
+        .build()
+
+    private val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            val location = locationResult.lastLocation
+            location?.let {
+                stopLocationUpdates()
+                fetchHospitals(it.latitude, it.longitude)
+            }
+        }
+    }
 
     private val requestLocationPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            getLocationAndFetchHospitals() // Meminta lokasi dan data rumah sakit
+            getCurrentLocation()
         } else {
             Toast.makeText(context, "Permission Denied", Toast.LENGTH_SHORT).show()
         }
@@ -57,40 +79,148 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
         val btnRemeasure: Button = view.findViewById(R.id.btn_remeasure)
         recyclerViewArticles = view.findViewById(R.id.recyclerViewHealthArticles)
         recyclerViewHospitals = view.findViewById(R.id.recyclerViewHospital)
+        shimmerLayoutArticles = view.findViewById(R.id.shimmerLayoutArticle)
+        shimmerLayoutHospitals = view.findViewById(R.id.shimmerLayoutHospitals)
 
-        // Inisialisasi FusedLocationProviderClient
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
 
-        // Menampilkan hasil ketika fragment dibuat
         loadResults(activityBpmTextView, riskStatusTextView)
+        setupRecyclerViews()
+        setupButtonListeners(btnRemeasure)
+        loadArticles()
+        checkLocationPermission()
+    }
 
-        // Mengatur RecyclerView untuk artikel dan rumah sakit
+    private fun setupRecyclerViews() {
         recyclerViewArticles.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         recyclerViewHospitals.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+    }
 
-        // Menambahkan listener untuk tombol "Mengukur Ulang"
+    private fun setupButtonListeners(btnRemeasure: Button) {
         btnRemeasure.setOnClickListener {
             findNavController().navigate(R.id.action_resultFragment_to_introFragment)
         }
+    }
 
-        // Memuat artikel
-        loadArticles()
-
-        // Meminta izin lokasi
-        if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            // Lokasi sudah diizinkan, langsung ambil lokasi dan data rumah sakit
-            getLocationAndFetchHospitals()
-        } else {
-            // Lokasi belum diizinkan, minta izin dari pengguna
-            requestLocationPermission.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+    private fun checkLocationPermission() {
+        when {
+            // Jika izin sudah diberikan, lanjutkan untuk mendapatkan lokasi
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED -> {
+                getCurrentLocation()
+            }
+            // Jika izin belum diberikan, minta izin
+            else -> {
+                requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
         }
+    }
 
+    private fun getCurrentLocation() {
+        startShimmerEffect(shimmerLayoutHospitals, recyclerViewHospitals)
+
+        // Periksa izin sebelum melanjutkan permintaan lokasi
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    fetchHospitals(location.latitude, location.longitude)
+                } else {
+                    requestNewLocationUpdates()
+                }
+            }.addOnFailureListener {
+                Toast.makeText(context, "Failed to get location: ${it.message}", Toast.LENGTH_SHORT).show()
+                stopShimmerEffect(shimmerLayoutHospitals, recyclerViewHospitals)
+            }
+        } else {
+            Toast.makeText(context, "Location permission not granted", Toast.LENGTH_SHORT).show()
+            stopShimmerEffect(shimmerLayoutHospitals, recyclerViewHospitals)
+        }
+    }
+
+    private fun requestNewLocationUpdates() {
+        // Meminta pembaruan lokasi baru hanya jika izin sudah diberikan
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            try {
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    locationCallback,
+                    Looper.getMainLooper()
+                )
+            } catch (e: SecurityException) {
+                // Menangani kasus di mana izin tidak diberikan
+                Toast.makeText(context, "Location permission not granted", Toast.LENGTH_SHORT).show()
+                stopShimmerEffect(shimmerLayoutHospitals, recyclerViewHospitals)
+            }
+        } else {
+            // Jika izin belum diberikan, tampilkan pesan kesalahan
+            Toast.makeText(context, "Location permission is required to get location updates.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun stopLocationUpdates() {
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    private fun fetchHospitals(latitude: Double, longitude: Double) {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitInstance.api.getHospitals(LocationRequest(latitude, longitude))
+                if (response.hospitals.isNotEmpty()) {
+                    setupHospitalRecyclerView(response.hospitals)
+                } else {
+                    Toast.makeText(context, "No hospitals found.", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                stopShimmerEffect(shimmerLayoutHospitals, recyclerViewHospitals)
+            }
+        }
+    }
+
+    private fun loadArticles() {
+        startShimmerEffect(shimmerLayoutArticles, recyclerViewArticles)
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitInstance.api.getArticles()
+                if (response.isSuccessful) {
+                    val articleList = response.body()?.articles ?: emptyList()
+                    setupArticleRecyclerView(articleList)
+                } else {
+                    Toast.makeText(context, "Failed to load articles.", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                stopShimmerEffect(shimmerLayoutArticles, recyclerViewArticles)
+            }
+        }
+    }
+
+    private fun setupArticleRecyclerView(articleList: List<ArticlesItem>) {
+        articleAdapter = ArticleAdapter(articleList)
+        recyclerViewArticles.adapter = articleAdapter
+    }
+
+    private fun setupHospitalRecyclerView(hospitals: List<Hospital>) {
+        val hospitalAdapter = HospitalAdapter(hospitals)
+        recyclerViewHospitals.adapter = hospitalAdapter
+    }
+
+    private fun startShimmerEffect(shimmerLayout: ShimmerFrameLayout, recyclerView: RecyclerView) {
+        shimmerLayout.startShimmer()
+        shimmerLayout.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
+    }
+
+    private fun stopShimmerEffect(shimmerLayout: ShimmerFrameLayout, recyclerView: RecyclerView) {
+        shimmerLayout.stopShimmer()
+        shimmerLayout.visibility = View.GONE
+        recyclerView.visibility = View.VISIBLE
     }
 
     private fun loadResults(activityBpmTextView: TextView, riskStatusTextView: TextView) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                // Mengambil dan menampilkan activityBpm
                 launch {
                     appDataStore.userInputFlow.collect { userInput ->
                         val activityBpm = "${userInput.activityBpm} BPM"
@@ -98,8 +228,6 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
                         saveToSharedPreferences(userInput.activityBpm.toString(), riskStatusTextView.text.toString())
                     }
                 }
-
-                // Mengambil dan menampilkan hasil prediksi dan status risiko
                 launch {
                     appDataStore.predictionResultFlow.collect { prediction ->
                         val displayPrediction = prediction ?: 0.0
@@ -116,99 +244,5 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
         val date = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
         val result = "$activityBpm, $riskStatus"
         sharedPreferencesHelper.saveMeasurementResult(date, result)
-    }
-
-    private fun loadArticles() {
-        val shimmerLayoutArticles: ShimmerFrameLayout = view?.findViewById(R.id.shimmerLayoutArticle)!!
-        shimmerLayoutArticles.startShimmer() // Mulai animasi shimmer
-        shimmerLayoutArticles.visibility = View.VISIBLE
-        recyclerViewArticles.visibility = View.GONE
-
-        lifecycleScope.launch {
-            try {
-                val response = RetrofitInstance.api.getArticles()
-                if (response.isSuccessful) {
-                    val articleList = response.body()?.articles ?: emptyList()
-                    setupArticleRecyclerView(articleList)
-                } else {
-                    Toast.makeText(context, "Failed to load articles.", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-            }finally {
-                // Hentikan shimmer dan tampilkan RecyclerView
-                shimmerLayoutArticles.stopShimmer()
-                shimmerLayoutArticles.visibility = View.GONE
-                recyclerViewArticles.visibility = View.VISIBLE
-            }
-        }
-    }
-
-    private fun setupArticleRecyclerView(articleList: List<ArticlesItem>) {
-        articleAdapter = ArticleAdapter(articleList)
-        recyclerViewArticles.adapter = articleAdapter
-    }
-
-    private fun getLocationAndFetchHospitals() {
-        if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            // Izin lokasi sudah diberikan, dapatkan lokasi pengguna
-            try {
-                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                    location?.let {
-                        val latitude = it.latitude
-                        val longitude = it.longitude
-
-                        // Memanggil API untuk mengambil data rumah sakit berdasarkan koordinat
-                        fetchHospitals(latitude, longitude)
-                    } ?: run {
-                        Toast.makeText(context, "Lokasi tidak tersedia", Toast.LENGTH_SHORT).show()
-                    }
-                }.addOnFailureListener { e ->
-                    Toast.makeText(context, "Gagal mendapatkan lokasi: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: SecurityException) {
-                Toast.makeText(context, "Izin lokasi tidak diberikan", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            // Izin belum diberikan, minta izin dari pengguna
-            requestLocationPermission.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-    }
-
-    private fun fetchHospitals(latitude: Double, longitude: Double) {
-        val shimmerLayoutHospitals: ShimmerFrameLayout = view?.findViewById(R.id.shimmerLayoutHospitals)!!
-        shimmerLayoutHospitals.startShimmer() // Mulai animasi shimmer
-        shimmerLayoutHospitals.visibility = View.VISIBLE
-        recyclerViewHospitals.visibility = View.GONE
-
-        val locationRequest = LocationRequest(latitude, longitude)
-
-        Log.d("DEBUG", "LocationRequest: Latitude = $latitude, Longitude = $longitude")
-
-        lifecycleScope.launch {
-            try {
-                // Memanggil API untuk mengambil data rumah sakit berdasarkan koordinat
-                val response = RetrofitInstance.api.getHospitals(LocationRequest(latitude, longitude))
-                if (response.hospitals.isNotEmpty()) {
-                    setupHospitalRecyclerView(response.hospitals)
-                } else {
-                    Toast.makeText(context, "No hospitals found.", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-            } finally {
-                // Hentikan shimmer dan tampilkan RecyclerView
-                shimmerLayoutHospitals.stopShimmer()
-                shimmerLayoutHospitals.visibility = View.GONE
-                recyclerViewHospitals.visibility = View.VISIBLE
-            }
-        }
-    }
-
-    private fun setupHospitalRecyclerView(hospitals: List<Hospital>) {
-        val hospitalAdapter = HospitalAdapter(hospitals)
-        recyclerViewHospitals.adapter = hospitalAdapter
     }
 }
