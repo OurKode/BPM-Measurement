@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 val Context.dataStore: androidx.datastore.core.DataStore<Preferences> by preferencesDataStore(name = "user_inputs")
 
@@ -80,11 +83,17 @@ class AppDataStore(private val context: Context) {
     }
 
     // Save a new history entry
-    suspend fun saveHistoryEntry(entry: String) {
+    suspend fun saveHistoryEntry(activityBpm: String, riskStatus: String) {
         context.dataStore.edit { preferences ->
             val currentHistory = preferences[HISTORY_KEY]?.split(";")?.toMutableList() ?: mutableListOf()
-            currentHistory.add(entry)
-            preferences[HISTORY_KEY] = currentHistory.joinToString(";")
+            val date = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
+            val entry = "$date - $activityBpm, $riskStatus"
+
+            // Cek jika entri sudah ada dalam riwayat
+            if (!currentHistory.contains(entry)) {
+                currentHistory.add(entry) // Tambahkan entri baru jika belum ada
+                preferences[HISTORY_KEY] = currentHistory.joinToString(";")
+            }
         }
     }
 

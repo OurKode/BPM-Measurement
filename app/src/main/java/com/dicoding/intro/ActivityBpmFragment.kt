@@ -114,6 +114,8 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         bpmTextView.text = "Mengukur..."
         startStopButton.text = "Berhenti"
 
+        // Mengubah backgroundTint tombol menjadi orange_transparent saat mulai pengukuran
+        startStopButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.orange_transparent)
         startTimer()
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
@@ -194,6 +196,9 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         camera = null
         startStopButton.text = "Mulai"
 
+        // Mengembalikan backgroundTint tombol ke default setelah pengukuran selesai
+        startStopButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.orange)
+
         timer?.cancel()
 
         if (saveResult) {
@@ -238,6 +243,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
 
             override fun onFinish() {
                 stopMonitoring(saveResult = true)
+                startStopButton.text = getString(R.string.reMeasure)
             }
         }
         timer?.start()
@@ -339,6 +345,7 @@ class ActivityBpmFragment : Fragment(R.layout.fragment_activity_bpm) {
         ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_GRANTED
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {

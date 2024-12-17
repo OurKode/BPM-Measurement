@@ -10,7 +10,7 @@ import com.dicoding.intro.ChestPainSliderFragment
 import com.dicoding.intro.ChestTightnessFragment
 import com.dicoding.intro.GenderFragment
 import com.dicoding.intro.RestingBpmFragment
-import com.dicoding.heartalert2.ResultFragment
+import com.dicoding.intro.ResultFragment
 import com.dicoding.intro.IntroFragment
 
 class ViewPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapter(fragmentActivity) {

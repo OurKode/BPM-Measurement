@@ -1,7 +1,6 @@
 package com.dicoding.intro
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -19,14 +18,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.dicoding.heartalert2.AppDataStore
-import com.dicoding.heartalert2.MainActivity
-import com.dicoding.heartalert2.SharedPreferencesHelper
 import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 import com.dicoding.heartalert2.R
-import com.dicoding.heartalert2.UserInput
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -63,13 +59,6 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         view.findViewById<Button>(R.id.btn_back).setOnClickListener {
             stopMonitoring(saveResult = true) // Hentikan pengukuran
             findNavController().popBackStack()
-//            val chestPainQuestionAnswer = sharedPreferencesHelper.getInt("chestPainLevel", -1)
-//            if (chestPainQuestionAnswer == 0) {
-//            // Jika pengguna memilih 'no' pada chest pain question
-//                (activity as MainActivity).moveToPage(3)
-//            } else {
-//                (activity as MainActivity).moveToPage(4)
-//            }
         }
 
         // Disable next button initially
@@ -78,8 +67,6 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
             // Ensure BPM measurement is completed before proceeding
             if (!isMonitoring) {
                 findNavController().navigate(R.id.action_restingBpmFragment_to_activityBpmFragment)
-            } else {
-//                Toast.makeText(requireContext(), "Selesaikan pengukuran terlebih dahulu", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -102,15 +89,17 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
 
     private fun startMonitoring() {
         if (!permissionsGranted()) {
-            Toast.makeText(requireContext(), "Izin kamera diperlukan untuk melanjutkan", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Izin kamera diperlukan untuk melanjutkan", Toast.LENGTH_LONG).show()
             return
         }
 
         isMonitoring = true
         sampleBuffer.clear()
-        bpmTextView.text = "Mengukur..."
-        startStopButton.text = "Berhenti"
+        bpmTextView.text = getString(R.string.measure)
+        startStopButton.text = getString(R.string.stop)
 
+        // Mengubah backgroundTint tombol menjadi orange_transparent saat mulai pengukuran
+        startStopButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.orange_transparent)
         startTimer()
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
@@ -185,7 +174,10 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
             cameraProvider.unbindAll()
         }
         camera = null
-        startStopButton.text = "Mulai"
+        startStopButton.text = getString(R.string.measure)
+
+        // Mengembalikan backgroundTint tombol ke default setelah pengukuran selesai
+        startStopButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.orange)
 
         timer?.cancel()
 
@@ -201,11 +193,11 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
                     saveBpm(roundedBpm)
 //                    Toast.makeText(requireContext(), "Resting BPM berhasil disimpan: $roundedBpm", Toast.LENGTH_SHORT).show()
                 } else {
-                    bpmTextView.text = "Pengukuran tidak valid. Coba lagi."
+                    bpmTextView.text = getString(R.string.notValidMeasure)
 //                    Toast.makeText(requireContext(), "Nilai BPM tidak valid. Pastikan jari Anda stabil.", Toast.LENGTH_SHORT).show()
                 }
             } ?: run{
-                bpmTextView.text = "Gagal menghitung BPM. Coba lagi."
+                bpmTextView.text = getString(R.string.failedMeasure)
                 // Handdle case where BPM calculation fails
                 Log.d("RestingBpmFragment", "BPM calculation failed")
             }
@@ -217,7 +209,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
 
     private fun resetData() {
         sampleBuffer.clear()
-        bpmTextView.text = "Mengukur..."
+        bpmTextView.text = getString(R.string.measure)
         restartTimer()
     }
 
@@ -231,6 +223,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
 
             override fun onFinish() {
                 stopMonitoring(saveResult = true)
+                startStopButton.text = getString(R.string.reMeasure)
             }
         }
         timer?.start()
@@ -283,7 +276,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         Log.d("RestingBpmFragment", "analyzeData: Jumlah samples=${samples.size}, average=$average, min=$min, max=$max, range=$range.")
 
         val crossings = getAverageCrossings(samples, average)
-        Log.d("RestingBpmFragment", "analyzeData: Jumlah crossings=${crossings.size}.")
+//        Log.d("RestingBpmFragment", "analyzeData: Jumlah crossings=${crossings.size}.")
 
         return DataStats(average, min, max, range, crossings)
     }
@@ -300,7 +293,7 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         for (currentSample in samples) {
             if (currentSample.second < average && previousSample.second > average) {
                 crossingsSamples.add(currentSample.first)
-                Log.d("RestingBpmFragment", "getAverageCrossings: Crossing ditemukan pada timestamp=${currentSample.first}.")
+//                Log.d("RestingBpmFragment", "getAverageCrossings: Crossing ditemukan pada timestamp=${currentSample.first}.")
             }
             previousSample = currentSample
         }
@@ -332,13 +325,14 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
         ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_GRANTED
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (!permissionsGranted()) {
-                Toast.makeText(requireContext(), "Izin kamera diperlukan untuk melanjutkan", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Izin kamera diperlukan untuk melanjutkan", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -366,13 +360,10 @@ class RestingBpmFragment : Fragment(R.layout.fragment_resting_bpm) {
                 )
             }
 
-
         } else {
             Log.d("RestingBpmFragment", "Invalid BPM value, not saving")
-//            Toast.makeText(requireContext(), "Nilai BPM tidak Valid", Toast.LENGTH_SHORT).show()
         }
     }
-
 
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10

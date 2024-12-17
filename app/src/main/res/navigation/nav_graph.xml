@@ -2,6 +2,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
     app:startDestination="@id/introFragment">
 
     <fragment
@@ -15,6 +16,9 @@
         <action
             android:id="@+id/action_introFragment_to_allHistoryFragment"
             app:destination="@id/allHistoryFragment" />
+        <action
+            android:id="@+id/action_introFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
     </fragment>
     <fragment
         android:id="@+id/genderFragment"
@@ -90,7 +94,7 @@
     </fragment>
     <fragment
         android:id="@+id/resultFragment"
-        android:name="com.dicoding.heartalert2.ResultFragment"
+        android:name="com.dicoding.intro.ResultFragment"
         android:label="Hasil"
         tools:layout="@layout/fragment_result">
         <action
@@ -99,7 +103,16 @@
     </fragment>
     <fragment
         android:id="@+id/allHistoryFragment"
-        android:name="com.dicoding.heartalert2.AllHistoryFragment"
+        android:name="com.dicoding.intro.AllHistoryFragment"
         android:label="Riwayat Pengukuran"
         tools:layout="@layout/fragment_all_history"/>
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.dicoding.intro.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_profileFragment_to_introFragment"
+            app:destination="@id/introFragment" />
+    </fragment>
 </navigation>

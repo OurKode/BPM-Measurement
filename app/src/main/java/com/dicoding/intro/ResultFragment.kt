@@ -1,9 +1,8 @@
-package com.dicoding.heartalert2
+package com.dicoding.intro
 
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Looper
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.View
 import android.widget.Button
@@ -19,6 +18,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.dicoding.heartalert2.AppDataStore
+import com.dicoding.heartalert2.Hospital
+import com.dicoding.heartalert2.R
+import com.dicoding.heartalert2.SharedPreferencesHelper
 import com.dicoding.heartalert2.adapter.ArticleAdapter
 import com.dicoding.heartalert2.adapter.HospitalAdapter
 import com.dicoding.heartalert2.api.ArticlesItem
@@ -29,6 +32,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -163,7 +167,12 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
     private fun fetchHospitals(latitude: Double, longitude: Double) {
         lifecycleScope.launch {
             try {
-                val response = RetrofitInstance.api.getHospitals(LocationRequest(latitude, longitude))
+                val response = RetrofitInstance.api.getHospitals(
+                    com.dicoding.heartalert2.LocationRequest(
+                        latitude,
+                        longitude
+                    )
+                )
                 if (response.hospitals.isNotEmpty()) {
                     setupHospitalRecyclerView(response.hospitals)
                 } else {
@@ -222,27 +231,33 @@ class ResultFragment : Fragment(R.layout.fragment_result) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    appDataStore.userInputFlow.collect { userInput ->
+                    appDataStore.userInputFlow.combine(appDataStore.predictionResultFlow) { userInput, prediction ->
                         val activityBpm = "${userInput.activityBpm} BPM"
+                        val riskStatus = if (prediction ?: 0.0 >= 0.5) "Beresiko!" else "Normal"
+                        return@combine activityBpm to riskStatus
+                    }.collect { (activityBpm, riskStatus) ->
                         activityBpmTextView.text = activityBpm
-                        saveToSharedPreferences(userInput.activityBpm.toString(), riskStatusTextView.text.toString())
-                    }
-                }
-                launch {
-                    appDataStore.predictionResultFlow.collect { prediction ->
-                        val displayPrediction = prediction ?: 0.0
-                        val riskStatus = if (displayPrediction >= 0.5) "Beresiko!" else "Normal"
                         riskStatusTextView.text = riskStatus
-                        saveToSharedPreferences(activityBpmTextView.text.toString(), riskStatus)
+                        saveToSharedPreferences(activityBpm, riskStatus)
                     }
                 }
             }
         }
     }
 
+    private var isHistorySaved = false
+
     private fun saveToSharedPreferences(activityBpm: String, riskStatus: String) {
         val date = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
         val result = "$activityBpm, $riskStatus"
         sharedPreferencesHelper.saveMeasurementResult(date, result)
+
+        // Pastikan hanya menyimpan satu kali
+        lifecycleScope.launch {
+            if (!isHistorySaved) {
+                appDataStore.saveHistoryEntry(activityBpm, riskStatus)
+                isHistorySaved = true
+            }
+        }
     }
 }

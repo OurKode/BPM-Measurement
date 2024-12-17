@@ -30,9 +30,8 @@
         app:thumbColor="@color/orange"
         app:thumbWidth="8dp"
         app:tickColor="@color/orange"
-        app:tickColorActive="@color/orange_transparent"
-        app:trackColor="@color/orange_transparent"
         app:trackColorActive="@color/orange"
+        app:tickColorInactive="@color/orange_transparent"
         tools:ignore="SpeakableTextPresentCheck" />
 
     <GridLayout

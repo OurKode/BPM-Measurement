@@ -1,4 +1,4 @@
-package com.dicoding.heartalert2
+package com.dicoding.intro
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -7,12 +7,15 @@ import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.dicoding.heartalert2.AppDataStore
+import com.dicoding.heartalert2.R
+import com.dicoding.heartalert2.SharedPreferencesHelper
 import com.dicoding.heartalert2.adapter.HistoryAdapter
 import kotlinx.coroutines.launch
 
 class AllHistoryFragment : Fragment(R.layout.fragment_all_history) {
 
-    private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
+//    private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
     private lateinit var historyAdapter: HistoryAdapter
     private lateinit var recyclerView: RecyclerView
     private lateinit var appDataStore: AppDataStore
@@ -21,7 +24,7 @@ class AllHistoryFragment : Fragment(R.layout.fragment_all_history) {
         super.onViewCreated(view, savedInstanceState)
 
         appDataStore = AppDataStore(requireContext())
-        sharedPreferencesHelper = SharedPreferencesHelper(requireContext())
+//        sharedPreferencesHelper = SharedPreferencesHelper(requireContext())
 
         // Setup RecyclerView
         recyclerView = view.findViewById(R.id.allHistoryRv)
@@ -35,12 +38,16 @@ class AllHistoryFragment : Fragment(R.layout.fragment_all_history) {
         loadHistory()
     }
 
+    private var isHistoryLoaded = false
+
     private fun loadHistory() {
-        // Collect history data using Flow from AppDataStore
         lifecycleScope.launch {
             appDataStore.historyFlow.collect { historyList ->
-                // Update RecyclerView with the retrieved history data
-                historyAdapter.updateData(historyList)
+                if (!isHistoryLoaded) {
+                    // Update RecyclerView hanya sekali setelah data tersedia
+                    historyAdapter.updateData(historyList)
+                    isHistoryLoaded = true // Menandai bahwa data sudah dimuat
+                }
             }
         }
     }

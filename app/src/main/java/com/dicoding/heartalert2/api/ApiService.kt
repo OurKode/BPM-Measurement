@@ -17,4 +17,22 @@ interface ApiService {
 
     @POST("hospital")
     suspend fun getHospitals( @Body locationRequest: LocationRequest): HospitalResponse
+
+    @POST("register")
+    suspend fun registerUser(@Body request: RegisterRequest): Response<MessageResponse>
+
+    @POST("verify-otp")
+    suspend fun verifyOtp(@Body otpRequest: OtpRequest): Response<VerifyOtpResponse>
+
+    @POST("resend-otp")
+    suspend fun resendOtp(@Body data: Map<String, String>): Response<VerifyOtpResponse>
+
+    @POST("login")
+    suspend fun loginUser(@Body request: LoginRequest): Response<LoginResponse>
+
+    @POST("forgot-password")
+    suspend fun forgotPassword(@Body email: Map<String, String>): Response<ForgotPasswordResponse>
+
+    @GET("profile")
+    suspend fun getUserProfile(): Response<UserResponse>
 }

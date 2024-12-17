@@ -1,7 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.HeartAlert2" parent="Theme.Material3.DayNight">
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+<!--         <item name="colorPrimary">@color/orange</item>-->
+<!--        <item name="colorOnPrimary">@color/orange_transparent</item>-->
     </style>
 
     <style name="Theme.HeartAlert2" parent="Base.Theme.HeartAlert2" />

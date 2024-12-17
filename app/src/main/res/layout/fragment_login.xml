@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    tools:context=".login.LoginFragment">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/email_edt"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        app:endIconMode="clear_text"
+        android:hint="@string/email"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="24dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/password_edt"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        app:endIconMode="password_toggle"
+        android:hint="@string/password"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="11dp"
+        app:helperText="Masukkan Kata Sandi minimal 8 karakter"
+        app:helperTextEnabled="true">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/login_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="@string/login"
+        android:padding="14dp"
+        android:layout_marginTop="24dp"
+        android:textSize="18sp"
+        android:backgroundTint="@color/orange"
+        android:textColor="@color/white"
+        style="@style/Widget.Material3.Button.ElevatedButton"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/forgotPass_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="@string/forgot_password"
+        android:padding="14dp"
+        android:textSize="18sp"
+        android:layout_marginTop="11dp"
+        android:textColor="@color/black"
+        android:backgroundTint="@color/orange_transparent"
+        style="@style/Widget.Material3.Button.TonalButton"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/createAcc_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="@string/create_acc"
+        android:padding="14dp"
+        android:textSize="18sp"
+        android:layout_marginTop="18dp"
+        android:textColor="@color/black"
+        android:backgroundTint="@color/white"
+        style="?attr/materialButtonOutlinedStyle"/>
+
+</LinearLayout>
